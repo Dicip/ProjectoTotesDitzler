@@ -89,6 +89,13 @@ const tipoMaterialTranslations: Record<Tote["tipoMaterial"], string> = {
   "Otro": "Otro",
 };
 
+const ubicacionToteTranslations: Record<Tote["ubicacion"], string> = {
+  "Patio 1": "Patio 1",
+  "Patio 2": "Patio 2",
+  "Patio 3": "Patio 3",
+  "Exterior": "Exterior",
+};
+
 
 export default function TotesPage() {
   const [totes, setTotes] = React.useState<Tote[]>([]);
@@ -443,9 +450,18 @@ export default function TotesPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Ubicación</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Bodega Principal, Zona A" {...field} />
-                    </FormControl>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccione una ubicación" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.entries(ubicacionToteTranslations).map(([key, value]) => (
+                           <SelectItem key={key} value={key as Tote["ubicacion"]}>{value}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

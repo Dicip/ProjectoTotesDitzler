@@ -7,7 +7,7 @@ export interface Tote {
   capacidad: number; 
   unidadCapacidad: "Litros" | "Kg";
   estadoActual: "Disponible" | "En Uso" | "En Lavado" | "En Mantenimiento" | "De Baja";
-  ubicacion: string; 
+  ubicacion: "Patio 1" | "Patio 2" | "Patio 3" | "Exterior"; 
   fechaAdquisicion: string; 
   fechaRetornoPrevista?: string | null; 
   notas?: string;
@@ -19,7 +19,7 @@ export const toteFormSchema = z.object({
   capacidad: z.coerce.number().min(0.1, { message: "La capacidad debe ser mayor a 0." }),
   unidadCapacidad: z.enum(["Litros", "Kg"], { required_error: "Debe seleccionar una unidad." }),
   estadoActual: z.enum(["Disponible", "En Uso", "En Lavado", "En Mantenimiento", "De Baja"], { required_error: "Debe seleccionar un estado." }),
-  ubicacion: z.string().min(2, { message: "La ubicación debe tener al menos 2 caracteres." }),
+  ubicacion: z.enum(["Patio 1", "Patio 2", "Patio 3", "Exterior"], { required_error: "Debe seleccionar una ubicación." }),
   fechaAdquisicion: z.coerce.date({
     errorMap: (issue, ctx) => {
       if (issue.code === z.ZodIssueCode.invalid_date) {
