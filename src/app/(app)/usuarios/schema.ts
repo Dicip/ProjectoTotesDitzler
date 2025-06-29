@@ -1,0 +1,21 @@
+import { z } from "zod";
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: "Admin" | "Editor" | "Viewer";
+  status: "Active" | "Inactive";
+  avatar?: string;
+  createdAt: string;
+  registeredBy: string;
+}
+
+export const userFormSchema = z.object({
+  name: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres." }),
+  email: z.string().email({ message: "Por favor, ingrese un email válido." }),
+  role: z.enum(["Admin", "Editor", "Viewer"]),
+  status: z.enum(["Active", "Inactive"]),
+});
+
+export type UserFormData = z.infer<typeof userFormSchema>;
