@@ -41,7 +41,7 @@ async function executeQuery<T>(query: string, pool: sql.ConnectionPool): Promise
 export async function getKpiDataFromSqlServer(): Promise<KpiData> {
   if (process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true') {
     console.log("[OFFLINE_MODE] Serving mock KPI data.");
-    return Promise.resolve(mockKpiData);
+    return mockKpiData;
   }
 
   checkDbConfig(); // Proactive check

@@ -20,7 +20,7 @@ const checkDbConfig = () => {
 export async function fetchUsers(): Promise<User[]> {
   if (process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true') {
     console.log("[OFFLINE_MODE] Serving mock users.");
-    return Promise.resolve(mockUsers);
+    return mockUsers;
   }
 
   checkDbConfig();

@@ -25,6 +25,7 @@ export const mockKpiData: KpiData = {
     { companyName: 'Frutas del Maipo Ltda.', toteCount: 30 },
     { companyName: 'Exportadora Sol Radiante S.A.', toteCount: 20 },
     { companyName: 'Agroindustrial Los Andes', toteCount: 15 },
+    { companyName: 'Planta Principal (Interno)', toteCount: 10 },
   ],
   totesByStatus: [
     { name: 'Disponible', value: 40, fill: 'hsl(var(--chart-1))' },

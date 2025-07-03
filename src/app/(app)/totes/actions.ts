@@ -22,7 +22,7 @@ const checkDbConfig = () => {
 export async function fetchTotes(): Promise<Tote[]> {
   if (process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true') {
     console.log("[OFFLINE_MODE] Serving mock totes.");
-    return Promise.resolve(mockTotes);
+    return mockTotes;
   }
   
   checkDbConfig();
