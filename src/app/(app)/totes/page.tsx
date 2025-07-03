@@ -89,7 +89,7 @@ const tipoMaterialTranslations: Record<Tote["tipoMaterial"], string> = {
   "Otro": "Otro",
 };
 
-const ubicacionToteTranslations: Record<Tote["ubicacion"], string> = {
+const ubicacionToteTranslations: Record<string, string> = {
   "Patio 1": "Patio 1",
   "Patio 2": "Patio 2",
   "Patio 3": "Patio 3",
@@ -135,9 +135,8 @@ export default function TotesPage() {
     if (editingTote && isEditToteDialogOpen) {
       form.reset({
         ...editingTote,
-        // The form now expects a Date object for fechaAdquisicion
+        ubicacion: editingTote.ubicacion || "Patio 1",
         fechaAdquisicion: parseISO(editingTote.fechaAdquisicion),
-        // And a string for fechaRetornoPrevista, but let's format it for the input
         fechaRetornoPrevista: editingTote.fechaRetornoPrevista ? format(parseISO(editingTote.fechaRetornoPrevista), "yyyy-MM-dd") : null,
         notas: editingTote.notas || "",
       });
@@ -161,16 +160,11 @@ export default function TotesPage() {
   const onSubmit = async (data: ToteFormData) => {
     if (!editingTote) return; 
 
-    // The data object from the form should already match ToteFormData structure.
-    // The `fechaAdquisicion` is a Date object, which is what the schema now expects.
-    // We don't need to transform it again.
     const submissionData: ToteFormData = {
       ...data,
-      notas: data.notas || null, // Ensure empty string becomes null if DB expects null
+      notas: data.notas || null,
     };
     
-    form.formState.isSubmitting; 
-
     try {
       const result = await updateTote(editingTote.id, submissionData);
       if (result.success && result.tote) {
@@ -189,7 +183,6 @@ export default function TotesPage() {
   const handleDeleteTote = async () => {
     if (deletingToteId) {
       const toteToDelete = totes.find(t => t.id === deletingToteId);
-      form.formState.isSubmitting;
       try {
         const result = await deleteTote(deletingToteId);
         if (result.success) {
@@ -306,7 +299,7 @@ export default function TotesPage() {
                         {estadoToteTranslations[tote.estadoActual]}
                       </Badge>
                     </TableCell>
-                    <TableCell>{tote.ubicacion}</TableCell>
+                    <TableCell>{tote.ubicacion || "Sin ubicación"}</TableCell>
                     <TableCell>{format(parseISO(tote.fechaAdquisicion), "P p", { locale: es })}</TableCell>
                     <TableCell className={cn(isToteOverdue(tote) && "text-destructive font-semibold")}>
                       {tote.fechaRetornoPrevista ? format(parseISO(tote.fechaRetornoPrevista), "P", { locale: es }) : "-"}
@@ -458,7 +451,7 @@ export default function TotesPage() {
                       </FormControl>
                       <SelectContent>
                         {Object.entries(ubicacionToteTranslations).map(([key, value]) => (
-                           <SelectItem key={key} value={key as Tote["ubicacion"]}>{value}</SelectItem>
+                           <SelectItem key={key} value={key as string}>{value}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>

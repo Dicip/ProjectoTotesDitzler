@@ -7,7 +7,7 @@ export interface Tote {
   capacidad: number; 
   unidadCapacidad: "Litros" | "Kg";
   estadoActual: "Disponible" | "En Uso" | "En Lavado" | "En Mantenimiento" | "De Baja";
-  ubicacion: "Patio 1" | "Patio 2" | "Patio 3" | "Exterior"; 
+  ubicacion?: "Patio 1" | "Patio 2" | "Patio 3" | "Exterior"; 
   fechaAdquisicion: string; 
   fechaRetornoPrevista?: string | null; 
   notas?: string;

@@ -28,7 +28,8 @@ export async function fetchTotes(): Promise<Tote[]> {
     return result.recordset.map(tote => ({
         ...tote,
         id: tote.Id.toString(),
-        capacidad: parseFloat(tote.Capacidad), 
+        capacidad: parseFloat(tote.Capacidad),
+        ubicacion: tote.ubicacion || undefined, 
         fechaAdquisicion: new Date(tote.FechaAdquisicion).toISOString(),
         fechaRetornoPrevista: tote.FechaRetornoPrevista ? new Date(tote.FechaRetornoPrevista).toISOString() : null,
         notas: tote.Notas || undefined, 

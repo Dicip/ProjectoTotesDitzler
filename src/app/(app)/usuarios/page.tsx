@@ -150,8 +150,6 @@ export default function UsuariosPage() {
   };
 
   const onSubmit = async (data: UserFormData) => {
-    form.formState.isSubmitting; 
-
     try {
       if (editingUser) {
         const result = await updateUser(editingUser.id, data);

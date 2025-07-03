@@ -148,7 +148,6 @@ export default function ClientesPage() {
   };
 
   const onSubmit = async (data: ClienteFormData) => {
-    form.formState.isSubmitting;
     try {
       if (editingCliente) {
         const result = await updateCliente(editingCliente.id, data);
@@ -178,7 +177,6 @@ export default function ClientesPage() {
   const handleDeleteCliente = async () => {
     if (deletingClienteId) {
       const clienteToDelete = clientes.find(c => c.id === deletingClienteId);
-      form.formState.isSubmitting;
       try {
         const result = await deleteCliente(deletingClienteId);
         if (result.success) {
