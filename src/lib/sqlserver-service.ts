@@ -5,6 +5,7 @@ import type { KpiData, TimeSeriesDataPoint, PieDataPoint, ToteCompanyHolder, Ove
 import { format } from 'date-fns';
 import sql from 'mssql';
 import { sqlConfig } from '@/lib/db-config';
+import { mockKpiData } from '@/data/mock-data';
 
 /**
  * @fileOverview Service for fetching KPI data from a SQL Server database.
@@ -19,6 +20,9 @@ const statusColors: Record<string, string> = {
 };
 
 const checkDbConfig = () => {
+  if (process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true') {
+    return;
+  }
   if (!sqlConfig.server || !sqlConfig.user || !sqlConfig.database || !sqlConfig.password) {
     throw new Error("La configuración de la base de datos está incompleta. Por favor, revise las variables de entorno en el archivo .env.local y reinicie el servidor.");
   }
@@ -35,6 +39,11 @@ async function executeQuery<T>(query: string, pool: sql.ConnectionPool): Promise
 }
 
 export async function getKpiDataFromSqlServer(): Promise<KpiData> {
+  if (process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true') {
+    console.log("[OFFLINE_MODE] Serving mock KPI data.");
+    return Promise.resolve(mockKpiData);
+  }
+
   checkDbConfig(); // Proactive check
   let pool: sql.ConnectionPool | null = null;
   try {
@@ -117,6 +126,9 @@ export async function getKpiDataFromSqlServer(): Promise<KpiData> {
 // Helper function to establish a SQL connection pool
 // To be used by individual CRUD actions if needed, though they might manage their own connections
 export async function getDbPool() {
+  if (process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true') {
+     throw new Error("Database pool not available in offline mode.");
+  }
   if (!process.env.DB_SERVER || !process.env.DB_USER || !process.env.DB_DATABASE) {
     throw new Error("Database environment variables not configured.");
   }

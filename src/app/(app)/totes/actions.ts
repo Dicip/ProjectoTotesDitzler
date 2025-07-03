@@ -8,14 +8,23 @@ import { sqlConfig } from "@/lib/db-config";
 import { parseISO, isValid, format } from "date-fns";
 import type { Tote, ToteFormData } from "./schema";
 import { toteFormSchema } from "./schema";
+import { mockTotes } from "@/data/mock-data";
 
 const checkDbConfig = () => {
+  if (process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true') {
+    return;
+  }
   if (!sqlConfig.server || !sqlConfig.user || !sqlConfig.database || !sqlConfig.password) {
     throw new Error("La configuración de la base de datos está incompleta. Por favor, revise las variables de entorno en el archivo .env.local y reinicie el servidor.");
   }
 }
 
 export async function fetchTotes(): Promise<Tote[]> {
+  if (process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true') {
+    console.log("[OFFLINE_MODE] Serving mock totes.");
+    return Promise.resolve(mockTotes);
+  }
+  
   checkDbConfig();
   let pool: sql.ConnectionPool | null = null;
   try {
@@ -45,6 +54,10 @@ export async function fetchTotes(): Promise<Tote[]> {
 
 
 export async function updateTote(toteId: string, toteData: ToteFormData): Promise<{ success: boolean; error?: string; tote?: Tote }> {
+  if (process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true') {
+    return { success: false, error: "Esta función está deshabilitada en modo offline." };
+  }
+
   checkDbConfig();
   const validation = toteFormSchema.safeParse(toteData);
   if (!validation.success) {
@@ -122,6 +135,10 @@ export async function updateTote(toteId: string, toteData: ToteFormData): Promis
 }
 
 export async function deleteTote(toteId: string): Promise<{ success: boolean; error?: string }> {
+  if (process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true') {
+    return { success: false, error: "Esta función está deshabilitada en modo offline." };
+  }
+
   checkDbConfig();
   let pool: sql.ConnectionPool | null = null;
   const idAsNumber = parseInt(toteId, 10);

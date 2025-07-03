@@ -5,36 +5,55 @@ Este es un proyecto de inicio de NextJS en Firebase Studio.
 
 Para empezar, echa un vistazo a /src/app/page.tsx.
 
+## Modo Offline (Demostración)
+
+La aplicación incluye un modo offline para demostraciones, que utiliza datos de ejemplo internos en lugar de conectarse a una base de datos real.
+
+-   **Para activar el modo offline (por defecto):** En el archivo `.env`, asegúrese de que la variable `NEXT_PUBLIC_OFFLINE_MODE` esté establecida en `true`.
+    ```dotenv
+    NEXT_PUBLIC_OFFLINE_MODE=true
+    ```
+-   **Para desactivar el modo offline y conectar a la base de datos:** Cambie la variable a `false` y asegúrese de que sus credenciales de SQL Server estén configuradas correctamente en el mismo archivo.
+    ```dotenv
+    NEXT_PUBLIC_OFFLINE_MODE=false
+    ```
+
+**Notas sobre el modo offline:**
+- Las funciones para agregar, editar o eliminar registros estarán deshabilitadas.
+- Podrá iniciar sesión con el usuario `adm` (contraseña `123`) o con cualquiera de los siguientes usuarios de ejemplo (cualquier contraseña funcionará):
+  - `ana.martinez@example.com` (Admin)
+  - `carlos.gomez@example.com` (Editor)
+  - `jorge.diaz@example.com` (Viewer)
+
+
 ## Ejecución de la Aplicación
 
 1.  **Instalar dependencias:**
     ```bash
     npm install
     ```
-2.  **Configurar variables de entorno para Conexión a SQL Server:**
-    Para conectar la aplicación a tu base de datos SQL Server, crea un archivo llamado `.env.local` en la raíz de tu proyecto. Añade tus detalles de conexión a este archivo. La conexión a la base de datos es **obligatoria** para que la aplicación funcione.
+2.  **Configurar variables de entorno:**
+    La aplicación utiliza un archivo `.env` en la raíz del proyecto para la configuración. Por defecto, está en modo offline. Para conectarse a una base de datos, edite este archivo.
 
-    Ejemplo `.env.local`:
+    Ejemplo `.env` para conexión a base de datos (modo online):
     ```dotenv
-    # SQL Server Connection Details
+    # Poner en 'false' para conectar a la base de datos
+    NEXT_PUBLIC_OFFLINE_MODE=false
+
+    # Detalles de conexión a SQL Server
     DB_SERVER=your_sql_server.database.windows.net
     DB_DATABASE=your_database_name
     DB_USER=your_username
     DB_PASSWORD=your_password
     DB_PORT=1433
-    # Set DB_ENCRYPT to true if you are using Azure SQL or your SQL Server instance requires encryption.
     DB_ENCRYPT=true
-    # Set DB_TRUST_SERVER_CERTIFICATE to true for local development if using a self-signed certificate.
-    # For production, this should ideally be false, and your server should have a valid certificate.
     DB_TRUST_SERVER_CERTIFICATE=false
     ```
     
-3.  **Configurar Esquema de Base de Datos y Datos Iniciales:**
-    Para inicializar tu base de datos SQL Server para este proyecto, usa el script proporcionado. Este script crea las tablas necesarias (`Usuarios`, `Totes`, `Clientes`) y las puebla con datos de ejemplo.
+3.  **Configurar Esquema de Base de Datos y Datos Iniciales (Solo para modo online):**
+    Para inicializar tu base de datos SQL Server, usa el script proporcionado.
     - El script se encuentra en `src/database/schema-and-sample-data.sql`.
-    - Abre este archivo en SQL Server Management Studio (SSMS) o tu cliente SQL preferido.
-    - Conéctate a tu base de datos.
-    - Ejecuta el script.
+    - Conéctate a tu base de datos y ejecuta el script.
 
 4.  **Ejecutar el servidor de desarrollo:**
     ```bash
@@ -46,7 +65,6 @@ Para empezar, echa un vistazo a /src/app/page.tsx.
     ```bash
     npm run genkit:dev
     ```
-    Esto inicia el servidor de desarrollo de Genkit, necesario para la función de Insights de IA.
 
 ## Integración con SQL Server
 
@@ -55,11 +73,11 @@ Para empezar, echa un vistazo a /src/app/page.tsx.
 ## Estructura del Proyecto
 
 -   `src/app`: Contiene las páginas y layouts de Next.js (App Router).
--   `src/components`: Contiene componentes de UI reutilizables, incluyendo componentes ShadCN y componentes de layout personalizados.
+-   `src/components`: Contiene componentes de UI reutilizables.
 -   `src/lib`: Contiene funciones de utilidad y servicios.
--   `src/data`: Contiene definiciones de tipos de datos.
--   `src/ai`: Contiene flujos de Genkit y configuraciones relacionadas con la IA.
--   `src/database`: Contiene scripts SQL para el esquema de la base de datos y datos de ejemplo.
+-   `src/data`: Contiene definiciones de tipos y datos de demostración.
+-   `src/ai`: Contiene flujos de Genkit y configuraciones de IA.
+-   `src/database`: Scripts SQL para el esquema de la base de datos.
 -   `public`: Activos estáticos.
 
 ## Tecnologías Clave
@@ -69,5 +87,5 @@ Para empezar, echa un vistazo a /src/app/page.tsx.
 -   TypeScript
 -   Tailwind CSS
 -   ShadCN UI
--   Genkit (para funciones de IA)
--   MSSQL (para integración con base de datos)
+-   Genkit (para IA)
+-   MSSQL (base de datos)

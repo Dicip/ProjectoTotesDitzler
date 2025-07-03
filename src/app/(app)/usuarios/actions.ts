@@ -6,14 +6,23 @@ import { revalidatePath } from "next/cache";
 import { sqlConfig } from "@/lib/db-config";
 import type { User, UserFormData } from "./schema";
 import { userFormSchema } from "./schema";
+import { mockUsers } from "@/data/mock-data";
 
 const checkDbConfig = () => {
+  if (process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true') {
+    return;
+  }
   if (!sqlConfig.server || !sqlConfig.user || !sqlConfig.database || !sqlConfig.password) {
     throw new Error("La configuración de la base de datos está incompleta. Por favor, revise las variables de entorno en el archivo .env.local y reinicie el servidor.");
   }
 }
 
 export async function fetchUsers(): Promise<User[]> {
+  if (process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true') {
+    console.log("[OFFLINE_MODE] Serving mock users.");
+    return Promise.resolve(mockUsers);
+  }
+
   checkDbConfig();
   let pool: sql.ConnectionPool | null = null;
   try {
@@ -38,6 +47,10 @@ export async function fetchUsers(): Promise<User[]> {
 }
 
 export async function addUser(userData: UserFormData): Promise<{ success: boolean; error?: string; user?: User }> {
+  if (process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true') {
+    return { success: false, error: "Esta función está deshabilitada en modo offline." };
+  }
+
   checkDbConfig();
   const validation = userFormSchema.safeParse(userData);
   if (!validation.success) {
@@ -91,6 +104,10 @@ export async function addUser(userData: UserFormData): Promise<{ success: boolea
 }
 
 export async function updateUser(userId: string, userData: UserFormData): Promise<{ success: boolean; error?: string; user?: User }> {
+  if (process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true') {
+    return { success: false, error: "Esta función está deshabilitada en modo offline." };
+  }
+
   checkDbConfig();
   const validation = userFormSchema.safeParse(userData);
   if (!validation.success) {
@@ -146,6 +163,10 @@ export async function updateUser(userId: string, userData: UserFormData): Promis
 }
 
 export async function deleteUser(userId: string): Promise<{ success: boolean; error?: string }> {
+  if (process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true') {
+    return { success: false, error: "Esta función está deshabilitada en modo offline." };
+  }
+
   checkDbConfig();
   let pool: sql.ConnectionPool | null = null;
   const idAsNumber = parseInt(userId, 10);

@@ -6,14 +6,23 @@ import { revalidatePath } from "next/cache";
 import { sqlConfig } from "@/lib/db-config";
 import type { Cliente, ClienteFormData } from "./schema";
 import { clienteFormSchema } from "./schema";
+import { mockClientes } from "@/data/mock-data";
 
 const checkDbConfig = () => {
+  if (process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true') {
+    return;
+  }
   if (!sqlConfig.server || !sqlConfig.user || !sqlConfig.database || !sqlConfig.password) {
     throw new Error("La configuración de la base de datos está incompleta. Por favor, revise las variables de entorno en el archivo .env.local y reinicie el servidor.");
   }
 }
 
 export async function fetchClientes(): Promise<Cliente[]> {
+  if (process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true') {
+    console.log("[OFFLINE_MODE] Serving mock clientes.");
+    return Promise.resolve(mockClientes);
+  }
+
   checkDbConfig();
   let pool: sql.ConnectionPool | null = null;
   try {
@@ -39,6 +48,10 @@ export async function fetchClientes(): Promise<Cliente[]> {
 }
 
 export async function addCliente(clienteData: ClienteFormData): Promise<{ success: boolean; error?: string; cliente?: Cliente }> {
+  if (process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true') {
+    return { success: false, error: "Esta función está deshabilitada en modo offline." };
+  }
+
   checkDbConfig();
   const validation = clienteFormSchema.safeParse(clienteData);
   if (!validation.success) {
@@ -93,6 +106,10 @@ export async function addCliente(clienteData: ClienteFormData): Promise<{ succes
 }
 
 export async function updateCliente(clienteId: string, clienteData: ClienteFormData): Promise<{ success: boolean; error?: string; cliente?: Cliente }> {
+  if (process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true') {
+    return { success: false, error: "Esta función está deshabilitada en modo offline." };
+  }
+
   checkDbConfig();
   const validation = clienteFormSchema.safeParse(clienteData);
   if (!validation.success) {
@@ -154,6 +171,10 @@ export async function updateCliente(clienteId: string, clienteData: ClienteFormD
 }
 
 export async function deleteCliente(clienteId: string): Promise<{ success: boolean; error?: string }> {
+  if (process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true') {
+    return { success: false, error: "Esta función está deshabilitada en modo offline." };
+  }
+
   checkDbConfig();
   let pool: sql.ConnectionPool | null = null;
   const idAsNumber = parseInt(clienteId, 10);

@@ -7,6 +7,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { sqlConfig } from "@/lib/db-config";
 import { AUTH_COOKIE_NAME } from '@/lib/constants';
+import { mockUsers } from "@/data/mock-data";
 
 // Esta interfaz define la estructura de los datos del usuario que guardamos en la sesión.
 export interface UserSessionData {
@@ -36,6 +37,9 @@ interface LoginResult {
 }
 
 const checkDbConfig = () => {
+  if (process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true') {
+    return;
+  }
   if (!sqlConfig.server || !sqlConfig.user || !sqlConfig.database || !sqlConfig.password) {
     throw new Error("La configuración de la base de datos está incompleta. Por favor, revise las variables de entorno en el archivo .env.local y reinicie el servidor.");
   }
@@ -58,7 +62,7 @@ export async function loginUser(credentials: LoginFormValues): Promise<LoginResu
 
   let sessionData: UserSessionData | null = null;
 
-  // --- Hardcoded Admin Check ---
+  // --- Hardcoded Admin Check (always available) ---
   if (email.toLowerCase() === 'adm' && password === '123') {
     sessionData = {
         userId: 'adm_user',
@@ -67,8 +71,23 @@ export async function loginUser(credentials: LoginFormValues): Promise<LoginResu
         rol: 'Admin',
     };
     console.log(`[LoginAction] 'adm' user authenticated successfully.`);
+  } else if (process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true') {
+    // --- OFFLINE MODE USER CHECK ---
+    console.log("[OFFLINE_MODE] Attempting mock user login.");
+    const mockUser = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    
+    // For demo, any password works if the user exists and is active.
+    if (mockUser && mockUser.status === 'Active') {
+        sessionData = {
+            userId: mockUser.id,
+            email: mockUser.email,
+            nombre: mockUser.name,
+            rol: mockUser.role,
+        };
+        console.log(`[OFFLINE_MODE] Mock user ${mockUser.email} authenticated successfully.`);
+    }
   } else {
-    // --- Database User Check ---
+    // --- Database User Check (Online Mode) ---
     checkDbConfig(); // Proactive check
     let pool: sql.ConnectionPool | null = null;
     try {
