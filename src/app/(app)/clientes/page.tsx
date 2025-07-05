@@ -168,7 +168,6 @@ export default function ClientesPage() {
       }
       setIsAddOrEditClienteDialogOpen(false);
       setEditingCliente(null);
-      await loadClientes(); // Refresh list
     } catch (e: any) {
       toast({ variant: "destructive", title: "Error", description: e.message });
     }
@@ -190,7 +189,6 @@ export default function ClientesPage() {
       } finally {
         setIsDeleteDialogOpen(false);
         setDeletingClienteId(null);
-        await loadClientes(); // Refresh list
       }
     }
   };

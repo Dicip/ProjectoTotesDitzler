@@ -170,7 +170,6 @@ export default function UsuariosPage() {
       }
       setIsAddOrEditUserDialogOpen(false);
       setEditingUser(null);
-      await loadUsers(); // Refresh list
     } catch (e: any) {
       toast({ variant: "destructive", title: "Error", description: e.message });
     }
@@ -192,7 +191,6 @@ export default function UsuariosPage() {
       } finally {
         setIsDeleteDialogOpen(false);
         setDeletingUserId(null);
-        await loadUsers(); // Refresh list
       }
     }
   };
