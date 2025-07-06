@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Edit, Trash2, MoreHorizontal, Info, CalendarIcon as CalendarLucideIcon, AlertTriangle, RefreshCw, AlertCircle } from "lucide-react";
+import { Edit, Trash2, MoreHorizontal, Info, CalendarIcon as CalendarLucideIcon, AlertTriangle, RefreshCw, AlertCircle, X } from "lucide-react";
 import { format, parseISO, isValid, isBefore, startOfDay, differenceInDays } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -60,7 +60,12 @@ export default function TotesPage() {
   const [editingTote, setEditingTote] = React.useState<Tote | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [deletingToteId, setDeletingToteId] = React.useState<string | null>(null);
+  
   const [searchTerm, setSearchTerm] = React.useState("");
+  const [statusFilter, setStatusFilter] = React.useState("all");
+  const [locationFilter, setLocationFilter] = React.useState("all");
+  const [clientFilter, setClientFilter] = React.useState("all");
+
   const { toast } = useToast();
 
   React.useEffect(() => {
@@ -88,6 +93,13 @@ export default function TotesPage() {
       setEditingTote(null);
     }
   }, [editingTote, form, isEditToteDialogOpen]);
+  
+  const handleClearFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("all");
+    setLocationFilter("all");
+    setClientFilter("all");
+  };
 
   const handleOpenEditToteDialog = (tote: Tote) => {
     setEditingTote(tote);
@@ -164,11 +176,23 @@ export default function TotesPage() {
   
   const filteredTotes = React.useMemo(() => {
     return totes
-      .filter((tote) =>
-        tote.codigoIdentificacion.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      .filter((tote) => {
+        const term = searchTerm.toLowerCase();
+        if (!term) return true;
+        const inCode = tote.codigoIdentificacion.toLowerCase().includes(term);
+        const inProduct = (tote.producto || "").toLowerCase().includes(term);
+        const inLote = (tote.lote || "").toLowerCase().includes(term);
+        return inCode || inProduct || inLote;
+      })
+      .filter((tote) => statusFilter === "all" || tote.estadoActual === statusFilter)
+      .filter((tote) => locationFilter === "all" || tote.ubicacion === locationFilter)
+      .filter((tote) => {
+        if (clientFilter === "all") return true;
+        if (clientFilter === "none") return !tote.clienteId;
+        return tote.clienteId === clientFilter;
+      })
       .sort((a, b) => new Date(b.fechaAdquisicion).getTime() - new Date(a.fechaAdquisicion).getTime());
-  }, [totes, searchTerm]);
+  }, [totes, searchTerm, statusFilter, locationFilter, clientFilter]);
 
 
   if (!isClient) {
@@ -210,13 +234,47 @@ export default function TotesPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="mb-4">
+          <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 mb-6">
              <Input
-                placeholder="Buscar por código..."
+                placeholder="Buscar por código, producto, lote..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-sm"
+                className="flex-grow"
               />
+              <div className="flex w-full md:w-auto items-center gap-2">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-full md:w-[160px]">
+                        <SelectValue placeholder="Estado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos los Estados</SelectItem>
+                        {TOTE_ESTADOS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+                 <Select value={locationFilter} onValueChange={setLocationFilter}>
+                    <SelectTrigger className="w-full md:w-[160px]">
+                        <SelectValue placeholder="Ubicación" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todas las Ubicaciones</SelectItem>
+                        {TOTE_UBICACIONES.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+                 <Select value={clientFilter} onValueChange={setClientFilter}>
+                    <SelectTrigger className="w-full md:w-[160px]">
+                        <SelectValue placeholder="Cliente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos los Clientes</SelectItem>
+                        <SelectItem value="none">Sin Asignar</SelectItem>
+                        {clientes.map(c => <SelectItem key={c.id} value={c.id}>{c.nombreEmpresa}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+                <Button variant="ghost" onClick={handleClearFilters} className="px-3">
+                    <X className="h-4 w-4 " />
+                    <span className="hidden md:inline ml-2">Limpiar</span>
+                </Button>
+              </div>
           </div>
           <div className="overflow-x-auto">
           <Table className="min-w-full">
