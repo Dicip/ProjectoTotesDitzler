@@ -7,60 +7,18 @@ import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Edit, Trash2, MoreHorizontal, Info, CalendarIcon as CalendarLucideIcon, AlertTriangle, RefreshCw, AlertCircle } from "lucide-react";
-import { format, parseISO, isValid, isBefore, startOfDay } from "date-fns";
+import { format, parseISO, isValid, isBefore, startOfDay, differenceInDays } from "date-fns";
 import { es } from "date-fns/locale";
 
 import { Button, buttonVariants } from "@/components/ui/button";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogClose,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -70,35 +28,17 @@ import { Calendar } from "@/components/ui/calendar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 
+import type { Cliente } from "../clientes/schema";
+import { fetchClientes } from "../clientes/actions";
+
 import type { Tote, ToteFormData } from "./schema"; 
-import { toteFormSchema } from "./schema"; 
+import { toteFormSchema, TOTE_ESTADOS, TOTE_UBICACIONES } from "./schema"; 
 import { fetchTotes, updateTote, deleteTote } from "./actions";
-
-
-const estadoToteTranslations: Record<Tote["estadoActual"], string> = {
-  Disponible: "Disponible",
-  "En Uso": "En Uso",
-  "En Lavado": "En Lavado",
-  "En Mantenimiento": "En Mantenimiento",
-  "De Baja": "De Baja",
-};
-
-const tipoMaterialTranslations: Record<Tote["tipoMaterial"], string> = {
-  "Plástico HDPE": "Plástico HDPE",
-  "Acero Inoxidable": "Acero Inoxidable",
-  "Otro": "Otro",
-};
-
-const ubicacionToteTranslations: Record<string, string> = {
-  "Patio 1": "Patio 1",
-  "Patio 2": "Patio 2",
-  "Patio 3": "Patio 3",
-  "Exterior": "Exterior",
-};
 
 
 export default function TotesPage() {
   const [totes, setTotes] = React.useState<Tote[]>([]);
+  const [clientes, setClientes] = React.useState<Cliente[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [isEditToteDialogOpen, setIsEditToteDialogOpen] = React.useState(false);
@@ -110,43 +50,48 @@ export default function TotesPage() {
 
   const form = useForm<ToteFormData>({
     resolver: zodResolver(toteFormSchema),
-    // Default values are set when opening the dialog for editing
   });
 
-  const loadTotes = React.useCallback(async () => {
+  const loadData = React.useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const fetchedTotes = await fetchTotes();
+      const [fetchedTotes, fetchedClientes] = await Promise.all([
+        fetchTotes(),
+        fetchClientes()
+      ]);
       setTotes(fetchedTotes);
+      setClientes(fetchedClientes);
     } catch (e: any) {
-      setError(e.message || "No se pudieron cargar los totes.");
-      toast({ variant: "destructive", title: "Error", description: e.message || "No se pudieron cargar los totes." });
+      const errorMessage = e.message || "No se pudieron cargar los datos.";
+      setError(errorMessage);
+      toast({ variant: "destructive", title: "Error", description: errorMessage });
     } finally {
       setIsLoading(false);
     }
   }, [toast]);
 
   React.useEffect(() => {
-    loadTotes();
-  }, [loadTotes]);
-
+    loadData();
+  }, [loadData]);
 
   React.useEffect(() => {
     if (editingTote && isEditToteDialogOpen) {
       form.reset({
         ...editingTote,
-        ubicacion: editingTote.ubicacion || "Patio 1",
         fechaAdquisicion: parseISO(editingTote.fechaAdquisicion),
-        fechaRetornoPrevista: editingTote.fechaRetornoPrevista ? format(parseISO(editingTote.fechaRetornoPrevista), "yyyy-MM-dd") : null,
+        fechaEnvasado: editingTote.fechaEnvasado ? format(parseISO(editingTote.fechaEnvasado), "yyyy-MM-dd") : null,
+        fechaVencimiento: editingTote.fechaVencimiento ? format(parseISO(editingTote.fechaVencimiento), "yyyy-MM-dd") : null,
         notas: editingTote.notas || "",
+        clienteId: editingTote.clienteId || null,
+        lote: editingTote.lote || "",
+        producto: editingTote.producto || "",
       });
     } else if (!isEditToteDialogOpen) {
-      form.reset(); // Reset to defaults when dialog closes
+      form.reset(); 
       setEditingTote(null);
     }
   }, [editingTote, form, isEditToteDialogOpen]);
-
 
   const handleOpenEditToteDialog = (tote: Tote) => {
     setEditingTote(tote);
@@ -161,13 +106,8 @@ export default function TotesPage() {
   const onSubmit = async (data: ToteFormData) => {
     if (!editingTote) return; 
 
-    const submissionData: ToteFormData = {
-      ...data,
-      notas: data.notas || null,
-    };
-    
     try {
-      const result = await updateTote(editingTote.id, submissionData);
+      const result = await updateTote(editingTote.id, data);
       if (result.success && result.tote) {
         setTotes(totes.map((t) => (t.id === result.tote!.id ? result.tote! : t)));
         toast({ title: "Tote actualizado", description: `El tote ${result.tote.codigoIdentificacion} ha sido actualizado.` });
@@ -201,6 +141,13 @@ export default function TotesPage() {
     }
   };
   
+  const clientesMap = React.useMemo(() => 
+    clientes.reduce((acc, cliente) => {
+      acc[cliente.id] = cliente.nombreEmpresa;
+      return acc;
+    }, {} as Record<string, string>), 
+  [clientes]);
+  
   const filteredTotes = React.useMemo(() => {
     return totes
       .filter((tote) =>
@@ -210,17 +157,22 @@ export default function TotesPage() {
   }, [totes, searchTerm]);
 
   const isToteOverdue = (tote: Tote): boolean => {
-    if (tote.estadoActual === "En Uso" && tote.fechaRetornoPrevista) {
+    if (tote.estadoActual !== "Con Cliente") return false;
+    
+    if (tote.fechaDespacho) {
       try {
-        return isBefore(parseISO(tote.fechaRetornoPrevista), startOfDay(new Date()));
-      } catch {
-        return false; // Invalid date string
-      }
+        if (differenceInDays(new Date(), parseISO(tote.fechaDespacho)) >= 30) return true;
+      } catch (e) { console.error(e) }
+    }
+    if (tote.fechaVencimiento) {
+      try {
+        if (isBefore(parseISO(tote.fechaVencimiento), startOfDay(new Date()))) return true;
+      } catch (e) { console.error(e) }
     }
     return false;
   };
 
-  if (isLoading && totes.length === 0) {
+  if (isLoading) {
      return (
       <div className="p-4 md:p-6 space-y-6">
         <Card>
@@ -251,7 +203,7 @@ export default function TotesPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={loadTotes} disabled={isLoading}>
+            <Button variant="outline" size="icon" onClick={loadData} disabled={isLoading}>
               <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
               <span className="sr-only">Recargar</span>
             </Button>
@@ -278,47 +230,50 @@ export default function TotesPage() {
                 className="max-w-sm"
               />
           </div>
-          <Table>
+          <div className="overflow-x-auto">
+          <Table className="min-w-full">
             <TableHeader>
               <TableRow>
                 <TableHead>Código</TableHead>
-                <TableHead>Material</TableHead>
-                <TableHead>Capacidad</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead>Ubicación</TableHead>
-                <TableHead>Fecha Ingreso</TableHead>
-                <TableHead>Retorno Previsto</TableHead>
-                <TableHead>Notas</TableHead>
+                <TableHead>Cliente</TableHead>
+                <TableHead>Producto</TableHead>
+                <TableHead>Lote</TableHead>
+                <TableHead>F. Envasado</TableHead>
+                <TableHead>F. Vencimiento</TableHead>
+                <TableHead>F. Despacho</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-             {isLoading && totes.length === 0 ? (
-                 <TableRow><TableCell colSpan={9} className="h-24 text-center">Cargando totes...</TableCell></TableRow>
-              ) : !isLoading && filteredTotes.length === 0 ? (
+             {!isLoading && filteredTotes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="h-24 text-center">
-                    {searchTerm ? "No se encontraron totes con ese código." : "No hay totes registrados en el sistema."}
+                  <TableCell colSpan={10} className="h-24 text-center">
+                    {searchTerm ? "No se encontraron totes con ese código." : "No hay totes registrados."}
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredTotes.map((tote) => (
                   <TableRow key={tote.id} className={cn(isToteOverdue(tote) && "bg-destructive/10 hover:bg-destructive/20")}>
                     <TableCell className="font-medium">{tote.codigoIdentificacion}</TableCell>
-                    <TableCell>{tipoMaterialTranslations[tote.tipoMaterial]}</TableCell>
-                    <TableCell>{`${tote.capacidad} ${tote.unidadCapacidad}`}</TableCell>
                     <TableCell>
-                      <Badge variant={tote.estadoActual === "Disponible" ? "default" : (tote.estadoActual === "En Uso" ? "secondary" : "outline")}>
-                        {estadoToteTranslations[tote.estadoActual]}
+                      <Badge variant={tote.estadoActual === "Disponible" ? "default" : (tote.estadoActual === "Con Cliente" ? "secondary" : "outline")}>
+                        {tote.estadoActual}
                       </Badge>
                     </TableCell>
-                    <TableCell>{tote.ubicacion || "Sin ubicación"}</TableCell>
-                    <TableCell>{format(parseISO(tote.fechaAdquisicion), "P p", { locale: es })}</TableCell>
+                    <TableCell>{tote.ubicacion}</TableCell>
+                    <TableCell>{tote.clienteId ? clientesMap[tote.clienteId] || "N/A" : "-"}</TableCell>
+                    <TableCell>{tote.producto || "-"}</TableCell>
+                    <TableCell>{tote.lote || "-"}</TableCell>
+                    <TableCell>{tote.fechaEnvasado ? format(parseISO(tote.fechaEnvasado), "P", { locale: es }) : "-"}</TableCell>
+                    <TableCell className={cn(tote.fechaVencimiento && isBefore(parseISO(tote.fechaVencimiento), startOfDay(new Date())) && "text-destructive font-semibold")}>
+                      {tote.fechaVencimiento ? format(parseISO(tote.fechaVencimiento), "P", { locale: es }) : "-"}
+                    </TableCell>
                     <TableCell className={cn(isToteOverdue(tote) && "text-destructive font-semibold")}>
-                      {tote.fechaRetornoPrevista ? format(parseISO(tote.fechaRetornoPrevista), "P", { locale: es }) : "-"}
+                      {tote.fechaDespacho ? format(parseISO(tote.fechaDespacho), "P", { locale: es }) : "-"}
                       {isToteOverdue(tote) && <AlertTriangle className="inline-block ml-1 h-4 w-4 text-destructive" />}
                     </TableCell>
-                    <TableCell className="max-w-[150px] truncate" title={tote.notas || undefined}>{tote.notas || "-"}</TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -344,204 +299,36 @@ export default function TotesPage() {
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 
       <Dialog open={isEditToteDialogOpen} onOpenChange={setIsEditToteDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Editar Tote</DialogTitle>
             <DialogDescription>
-              Modifique los detalles del tote registrado. La fecha de ingreso original se mantiene.
+              Modifique los detalles del tote. La fecha de despacho se actualiza automáticamente al cambiar el estado a "Con Cliente".
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
-              <FormField
-                control={form.control}
-                name="codigoIdentificacion"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Código de Identificación</FormLabel>
-                    <FormControl>
-                      <Input placeholder="TOTE-XXX-001" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="tipoMaterial"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo de Material</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccione un material" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {Object.entries(tipoMaterialTranslations).map(([key, value]) => (
-                           <SelectItem key={key} value={key as Tote["tipoMaterial"]}>{value}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="capacidad"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Capacidad</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="1000" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="unidadCapacidad"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Unidad</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Unidad" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Litros">Litros</SelectItem>
-                          <SelectItem value="Kg">Kg</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <FormField
-                control={form.control}
-                name="estadoActual"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Estado Actual</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccione un estado" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                         {Object.entries(estadoToteTranslations).map(([key, value]) => (
-                           <SelectItem key={key} value={key as Tote["estadoActual"]}>{value}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="ubicacion"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Ubicación</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccione una ubicación" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {Object.entries(ubicacionToteTranslations).map(([key, value]) => (
-                           <SelectItem key={key} value={key as string}>{value}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="fechaAdquisicion"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Fecha de Ingreso (Automática)</FormLabel>
-                     <Input
-                        type="text"
-                        value={field.value && isValid(field.value) ? format(field.value, "PPP p", { locale: es }) : "Fecha inválida"}
-                        readOnly
-                        disabled
-                        className="cursor-not-allowed bg-muted/50"
-                      />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="fechaRetornoPrevista"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Fecha de Retorno Prevista</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value && isValid(parseISO(field.value)) ? (
-                              format(parseISO(field.value), "PPP", { locale: es })
-                            ) : (
-                              <span>Seleccione una fecha (opcional)</span>
-                            )}
-                            <CalendarLucideIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value && isValid(parseISO(field.value)) ? parseISO(field.value) : undefined}
-                          onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
-                          initialFocus
-                          locale={es}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="notas"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notas Adicionales</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Información relevante sobre el tote..." {...field} value={field.value || ''} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
+              <FormField control={form.control} name="codigoIdentificacion" render={({ field }) => ( <FormItem><FormLabel>Código</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="tipoMaterial" render={({ field }) => ( <FormItem><FormLabel>Material</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="Plástico HDPE">Plástico HDPE</SelectItem><SelectItem value="Acero Inoxidable">Acero Inoxidable</SelectItem><SelectItem value="Otro">Otro</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="capacidad" render={({ field }) => ( <FormItem><FormLabel>Capacidad</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="unidadCapacidad" render={({ field }) => ( <FormItem><FormLabel>Unidad</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="Litros">Litros</SelectItem><SelectItem value="Kg">Kg</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="estadoActual" render={({ field }) => ( <FormItem><FormLabel>Estado</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{TOTE_ESTADOS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="ubicacion" render={({ field }) => ( <FormItem><FormLabel>Ubicación</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{TOTE_UBICACIONES.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="clienteId" render={({ field }) => ( <FormItem><FormLabel>Cliente Asignado</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Ninguno"/></SelectTrigger></FormControl><SelectContent><SelectItem value="">Ninguno</SelectItem>{clientes.map(c => <SelectItem key={c.id} value={c.id}>{c.nombreEmpresa}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="producto" render={({ field }) => ( <FormItem><FormLabel>Producto</FormLabel><FormControl><Input {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="lote" render={({ field }) => ( <FormItem><FormLabel>Lote</FormLabel><FormControl><Input {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+              
+              <FormField control={form.control} name="fechaEnvasado" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha de Envasado</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(parseISO(field.value), "PPP", { locale: es }) : <span>Seleccione fecha</span>}<CalendarLucideIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value ? parseISO(field.value) : undefined} onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="fechaVencimiento" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha de Vencimiento</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(parseISO(field.value), "PPP", { locale: es }) : <span>Seleccione fecha</span>}<CalendarLucideIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value ? parseISO(field.value) : undefined} onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem> )} />
+              
+              <FormField control={form.control} name="notas" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Notas</FormLabel><FormControl><Textarea {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+              
+              <DialogFooter className="md:col-span-2">
                  <DialogClose asChild>
                    <Button type="button" variant="outline">Cancelar</Button>
                 </DialogClose>

@@ -93,10 +93,11 @@ export default function DashboardPage() {
   }, [kpiDashboardData]);
 
   const totalTotesInOperation = React.useMemo(() => {
-    if (!totesInUseByCompany) return 0;
-    return totesInUseByCompany.reduce((sum, company) => sum + company.toteCount, 0);
-  }, [totesInUseByCompany]);
-
+    if (!totesByStatusData) return 0;
+    const totesConCliente = totesByStatusData.find(d => d.name === "Con Cliente");
+    return totesConCliente?.value ?? 0;
+  }, [totesByStatusData]);
+  
   const totalOverdueTotesCount = React.useMemo(() => {
     if (!overdueTotes) return 0;
     return overdueTotes.reduce((sum, item) => sum + item.count, 0);
@@ -149,12 +150,12 @@ export default function DashboardPage() {
           <PieChartCard data={totesByStatusData} chartConfig={totesByStatusConfig} />
         </KpiCard>
         
-        <KpiCard title="Totes en Uso" className="lg:col-span-1">
+        <KpiCard title="Totes con Clientes" className="lg:col-span-1">
            <div className="flex items-center gap-4 mb-3">
              <Package className="h-10 w-10 text-primary" />
              <div>
                <p className="text-3xl font-bold">{toteCountFormatter(totalTotesInOperation)}</p>
-               <p className="text-xs text-muted-foreground">Unidades actualmente en operación</p>
+               <p className="text-xs text-muted-foreground">Unidades actualmente con clientes</p>
              </div>
            </div>
            {totesInUseByCompany && totesInUseByCompany.length > 0 ? (
@@ -178,7 +179,7 @@ export default function DashboardPage() {
             <AlertTriangle className="h-10 w-10 text-destructive" />
             <div>
               <p className="text-3xl font-bold">{toteCountFormatter(totalOverdueTotesCount)}</p>
-              <p className="text-xs text-muted-foreground">Unidades con retorno vencido</p>
+              <p className="text-xs text-muted-foreground">Unidades vencidas o con despacho > 30 días</p>
             </div>
           </div>
            {overdueTotes && overdueTotes.length > 0 ? (
@@ -205,7 +206,7 @@ export default function DashboardPage() {
             <Package className="h-10 w-10 text-muted-foreground" />
             <div>
               <p className="text-3xl font-bold">{totalTotes !== null ? toteCountFormatter(totalTotes) : "N/A"}</p>
-              <p className="text-xs text-muted-foreground">Unidades totales disponibles</p>
+              <p className="text-xs text-muted-foreground">Unidades totales (sin contar bajas)</p>
             </div>
           </div>
         </KpiCard>
@@ -223,5 +224,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

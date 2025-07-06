@@ -3,6 +3,7 @@
 
 import type { Tote, ToteFormData } from "./schema";
 import { mockTotes } from "@/data/mock-data";
+import {formatISO, startOfDay} from "date-fns";
 
 export async function fetchTotes(): Promise<Tote[]> {
   console.log("[DEMO_MODE] Serving mock totes.");
@@ -19,8 +20,14 @@ export async function updateTote(toteId: string, toteData: ToteFormData): Promis
 
     const originalTote = mockTotes[toteIndex];
 
-    // Combine data, keeping original acquisition date.
-    // The form sends 'yyyy-MM-dd' for fechaRetornoPrevista, we need to convert it to ISO string for consistency.
+    // Lógica para establecer fecha de despacho si el estado cambia a "Con Cliente"
+    let fechaDespacho = originalTote.fechaDespacho;
+    if (toteData.estadoActual === 'Con Cliente' && originalTote.estadoActual !== 'Con Cliente') {
+        fechaDespacho = startOfDay(new Date()).toISOString();
+    } else if (toteData.estadoActual !== 'Con Cliente') {
+        fechaDespacho = null; // Limpiar fecha de despacho si ya no está con el cliente
+    }
+
     const updatedTote: Tote = {
         ...originalTote,
         codigoIdentificacion: toteData.codigoIdentificacion,
@@ -29,8 +36,14 @@ export async function updateTote(toteId: string, toteData: ToteFormData): Promis
         unidadCapacidad: toteData.unidadCapacidad,
         estadoActual: toteData.estadoActual,
         ubicacion: toteData.ubicacion,
-        fechaRetornoPrevista: toteData.fechaRetornoPrevista ? new Date(toteData.fechaRetornoPrevista).toISOString() : null,
         notas: toteData.notas || undefined,
+        // Nuevos campos
+        producto: toteData.producto || undefined,
+        clienteId: toteData.clienteId || null,
+        lote: toteData.lote || undefined,
+        fechaEnvasado: toteData.fechaEnvasado ? new Date(toteData.fechaEnvasado).toISOString() : null,
+        fechaVencimiento: toteData.fechaVencimiento ? new Date(toteData.fechaVencimiento).toISOString() : null,
+        fechaDespacho: fechaDespacho,
     };
 
     return { success: true, tote: updatedTote };

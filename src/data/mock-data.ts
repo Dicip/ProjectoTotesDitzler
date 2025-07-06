@@ -1,9 +1,9 @@
 
-import type { KpiData, TimeSeriesDataPoint, PieDataPoint, ToteCompanyHolder, OverdueToteInfo } from './kpi-data';
+import type { KpiData, PieDataPoint, ToteCompanyHolder, OverdueToteInfo } from './kpi-data';
 import type { User } from '@/app/(app)/usuarios/schema';
 import type { Tote } from '@/app/(app)/totes/schema';
 import type { Cliente } from '@/app/(app)/clientes/schema';
-import { subDays, format, isBefore, parseISO, startOfDay, addDays } from 'date-fns';
+import { subDays, format, isBefore, parseISO, startOfDay, addDays, differenceInDays } from 'date-fns';
 
 // =================================================================
 // BASE MOCK DATA
@@ -27,52 +27,67 @@ export const mockClientes: Cliente[] = [
 ];
 
 export const mockTotes: Tote[] = [
-    { id: '101', codigoIdentificacion: 'TOTE-PL-001', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'En Uso', ubicacion: 'Patio 1', fechaAdquisicion: subDays(new Date(), 50).toISOString(), fechaRetornoPrevista: addDays(new Date(), 10).toISOString(), notas: `Asignado a ${mockClientes[0].nombreEmpresa}` },
-    { id: '102', codigoIdentificacion: 'TOTE-AI-002', tipoMaterial: 'Acero Inoxidable', capacidad: 500, unidadCapacidad: 'Kg', estadoActual: 'Disponible', ubicacion: 'Patio 2', fechaAdquisicion: subDays(new Date(), 120).toISOString(), fechaRetornoPrevista: null, notas: '' },
-    { id: '103', codigoIdentificacion: 'TOTE-PL-003', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'En Lavado', ubicacion: 'Patio 1', fechaAdquisicion: subDays(new Date(), 30).toISOString(), fechaRetornoPrevista: null, notas: 'Limpieza profunda requerida' },
-    { id: '104', codigoIdentificacion: 'TOTE-PL-004', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'En Uso', ubicacion: 'Exterior', fechaAdquisicion: subDays(new Date(), 5).toISOString(), fechaRetornoPrevista: subDays(new Date(), 2).toISOString(), notas: `Asignado a ${mockClientes[1].nombreEmpresa}` },
-    { id: '105', codigoIdentificacion: 'TOTE-OT-005', tipoMaterial: 'Otro', capacidad: 750, unidadCapacidad: 'Litros', estadoActual: 'En Mantenimiento', ubicacion: 'Patio 3', fechaAdquisicion: subDays(new Date(), 200).toISOString(), fechaRetornoPrevista: null, notas: 'Válvula defectuosa' },
-    { id: '106', codigoIdentificacion: 'TOTE-PL-006', tipoMaterial: 'Plástico HDPE', capacidad: 1200, unidadCapacidad: 'Litros', estadoActual: 'Disponible', ubicacion: 'Patio 2', fechaAdquisicion: subDays(new Date(), 15).toISOString(), fechaRetornoPrevista: null, notas: 'Nuevo' },
-    { id: '107', codigoIdentificacion: 'TOTE-PL-007', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'En Uso', ubicacion: 'Patio 1', fechaAdquisicion: subDays(new Date(), 45).toISOString(), fechaRetornoPrevista: addDays(new Date(), 15).toISOString(), notas: `Asignado a ${mockClientes[0].nombreEmpresa}` },
-    { id: '108', codigoIdentificacion: 'TOTE-PL-008', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'En Uso', ubicacion: 'Patio 3', fechaAdquisicion: subDays(new Date(), 60).toISOString(), fechaRetornoPrevista: subDays(new Date(), 5).toISOString(), notas: `Asignado a ${mockClientes[3].nombreEmpresa}` },
-    { id: '109', codigoIdentificacion: 'TOTE-AI-009', tipoMaterial: 'Acero Inoxidable', capacidad: 800, unidadCapacidad: 'Kg', estadoActual: 'En Uso', ubicacion: 'Exterior', fechaAdquisicion: subDays(new Date(), 90).toISOString(), fechaRetornoPrevista: addDays(new Date(), 20).toISOString(), notas: `Asignado a ${mockClientes[4].nombreEmpresa}` },
-    { id: '110', codigoIdentificacion: 'TOTE-PL-010', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'Disponible', ubicacion: 'Patio 2', fechaAdquisicion: subDays(new Date(), 25).toISOString(), fechaRetornoPrevista: null, notas: '' },
-    { id: '111', codigoIdentificacion: 'TOTE-PL-011', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'En Uso', ubicacion: 'Patio 1', fechaAdquisicion: subDays(new Date(), 10).toISOString(), fechaRetornoPrevista: addDays(new Date(), 5).toISOString(), notas: `Asignado a ${mockClientes[1].nombreEmpresa}` },
-    { id: '112', codigoIdentificacion: 'TOTE-PL-012', tipoMaterial: 'Plástico HDPE', capacidad: 1200, unidadCapacidad: 'Litros', estadoActual: 'En Lavado', ubicacion: 'Patio 1', fechaAdquisicion: subDays(new Date(), 5).toISOString(), fechaRetornoPrevista: null, notas: '' },
-    { id: '113', codigoIdentificacion: 'TOTE-PL-013', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'En Uso', ubicacion: 'Patio 2', fechaAdquisicion: subDays(new Date(), 22).toISOString(), fechaRetornoPrevista: subDays(new Date(), 1).toISOString(), notas: 'Asignado a Planta Principal (Interno)' },
-    { id: '114', codigoIdentificacion: 'TOTE-AI-014', tipoMaterial: 'Acero Inoxidable', capacidad: 500, unidadCapacidad: 'Kg', estadoActual: 'De Baja', ubicacion: 'Patio 3', fechaAdquisicion: subDays(new Date(), 500).toISOString(), fechaRetornoPrevista: null, notas: 'Fisura irreparable' },
-    { id: '115', codigoIdentificacion: 'TOTE-PL-015', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'En Uso', ubicacion: 'Patio 3', fechaAdquisicion: subDays(new Date(), 33).toISOString(), fechaRetornoPrevista: addDays(new Date(), 30).toISOString(), notas: `Asignado a ${mockClientes[3].nombreEmpresa}` },
+    // Tote 1: OK, with client < 30 days
+    { id: '101', codigoIdentificacion: 'TOTE-PL-001', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'Con Cliente', ubicacion: 'Cliente', fechaAdquisicion: subDays(new Date(), 50).toISOString(), 
+      producto: 'Pulpa de Frutilla', lote: 'L-202405A', clienteId: '201', fechaEnvasado: subDays(new Date(), 15).toISOString(), fechaVencimiento: addDays(new Date(), 45).toISOString(), fechaDespacho: subDays(new Date(), 15).toISOString(), notas: `Ruta Santiago` },
+    // Tote 2: OK, Disponible
+    { id: '102', codigoIdentificacion: 'TOTE-AI-002', tipoMaterial: 'Acero Inoxidable', capacidad: 500, unidadCapacidad: 'Kg', estadoActual: 'Disponible', ubicacion: 'Patio de recepción', fechaAdquisicion: subDays(new Date(), 120).toISOString() },
+    // Tote 3: OK, En Lavado
+    { id: '103', codigoIdentificacion: 'TOTE-PL-003', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'En Lavado', ubicacion: 'Ken – Lavadora de CIP y COP de totes', fechaAdquisicion: subDays(new Date(), 30).toISOString(), notas: 'Limpieza profunda requerida' },
+    // Tote 4: FUERA DE PLAZO (> 30 days with client)
+    { id: '104', codigoIdentificacion: 'TOTE-PL-004', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'Con Cliente', ubicacion: 'Cliente', fechaAdquisicion: subDays(new Date(), 40).toISOString(), 
+      producto: 'Mermelada de Mora', lote: 'L-202404B', clienteId: '202', fechaEnvasado: subDays(new Date(), 35).toISOString(), fechaVencimiento: addDays(new Date(), 25).toISOString(), fechaDespacho: subDays(new Date(), 35).toISOString(), notas: `Ruta Valparaíso` },
+    // Tote 5: OK, En Mantenimiento
+    { id: '105', codigoIdentificacion: 'TOTE-OT-005', tipoMaterial: 'Otro', capacidad: 750, unidadCapacidad: 'Litros', estadoActual: 'En Mantenimiento', ubicacion: 'Antecámara Planta', fechaAdquisicion: subDays(new Date(), 200).toISOString(), notas: 'Válvula defectuosa' },
+    // Tote 6: FUERA DE PLAZO (Expired product)
+    { id: '106', codigoIdentificacion: 'TOTE-PL-006', tipoMaterial: 'Plástico HDPE', capacidad: 1200, unidadCapacidad: 'Litros', estadoActual: 'Con Cliente', ubicacion: 'Cliente', fechaAdquisicion: subDays(new Date(), 15).toISOString(), 
+      producto: 'Pulpa de Manzana', lote: 'L-202405C', clienteId: '204', fechaEnvasado: subDays(new Date(), 10).toISOString(), fechaVencimiento: subDays(new Date(), 1).toISOString(), fechaDespacho: subDays(new Date(), 10).toISOString() },
+    // Tote 7: OK, En produccion
+    { id: '107', codigoIdentificacion: 'TOTE-PL-007', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'En Uso', ubicacion: 'Producción (Envasado)', fechaAdquisicion: subDays(new Date(), 45).toISOString(),
+      producto: 'Pulpa de Frambuesa', lote: 'L-202405D', fechaEnvasado: new Date().toISOString() },
+    // Tote 8: OK, Almacenado en cámara
+    { id: '108', codigoIdentificacion: 'TOTE-PL-008', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'Disponible', ubicacion: 'Cámara 1', fechaAdquisicion: subDays(new Date(), 60).toISOString(),
+      producto: 'Jugo de Arándano', lote: 'L-202405E', fechaEnvasado: subDays(new Date(), 2).toISOString(), fechaVencimiento: addDays(new Date(), 90).toISOString() },
+    // Tote 9: De Baja
+    { id: '114', codigoIdentificacion: 'TOTE-AI-014', tipoMaterial: 'Acero Inoxidable', capacidad: 500, unidadCapacidad: 'Kg', estadoActual: 'De Baja', ubicacion: 'Patio de recepción', fechaAdquisicion: subDays(new Date(), 500).toISOString(), notas: 'Fisura irreparable' },
 ];
 
 
 // =================================================================
 // DERIVED & SYNCHRONIZED KPI DATA
-// This data is generated from the base data above to ensure consistency.
 // =================================================================
 
 // --- Helper Functions ---
 const isToteOverdue = (tote: Tote): boolean => {
-  if (tote.estadoActual === "En Uso" && tote.fechaRetornoPrevista) {
-    try {
-      const returnDate = parseISO(tote.fechaRetornoPrevista);
-      const today = startOfDay(new Date());
-      return isBefore(returnDate, today);
-    } catch { 
-      return false;
-    }
+  if (tote.estadoActual !== "Con Cliente") {
+    return false;
   }
+  
+  // Condición 1: Si la fecha de despacho es superior o igual a 30 días
+  if (tote.fechaDespacho) {
+    try {
+      if (differenceInDays(new Date(), parseISO(tote.fechaDespacho)) >= 30) {
+        return true;
+      }
+    } catch { /* ignore invalid date */ }
+  }
+
+  // Condición 2: Si el tote está en status cliente es inferior a 30 días, pero la fecha de vencimiento está cumplida
+  if (tote.fechaVencimiento) {
+    try {
+      if (isBefore(parseISO(tote.fechaVencimiento), startOfDay(new Date()))) {
+        return true;
+      }
+    } catch { /* ignore invalid date */ }
+  }
+
   return false;
 };
-
-const getClientNameFromNote = (note?: string): string | null => {
-    if (!note || !note.startsWith('Asignado a ')) return null;
-    return note.substring('Asignado a '.length);
-}
 
 // --- KPI Data Generation ---
 const activeUsers = mockUsers.filter(user => user.status === 'Active').length;
 
-const totalTotes = mockTotes.length;
+const totalTotes = mockTotes.filter(t => t.estadoActual !== 'De Baja').length;
 
 const totesByStatusMap = mockTotes.reduce((acc, tote) => {
   if (tote.estadoActual !== 'De Baja') {
@@ -88,23 +103,25 @@ const totesByStatus: PieDataPoint[] = Object.entries(totesByStatusMap)
     fill: `hsl(var(--chart-${(index % 5) + 1}))`,
   }));
 
-const totesInUseByCompanyMap = mockTotes
-  .filter(t => t.estadoActual === 'En Uso')
+const totesConClienteMap = mockTotes
+  .filter(t => t.estadoActual === 'Con Cliente' && t.clienteId)
   .reduce((acc, tote) => {
-    const clientName = getClientNameFromNote(tote.notas) || 'Planta Principal (Interno)';
+    const cliente = mockClientes.find(c => c.id === tote.clienteId);
+    const clientName = cliente?.nombreEmpresa || 'Cliente Desconocido';
     acc[clientName] = (acc[clientName] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
-const totesInUseByCompany: ToteCompanyHolder[] = Object.entries(totesInUseByCompanyMap)
+const totesInUseByCompany: ToteCompanyHolder[] = Object.entries(totesConClienteMap)
   .map(([companyName, toteCount]) => ({ companyName, toteCount }))
   .sort((a,b) => b.toteCount - a.toteCount);
 
 
 const overdueTotesMap = mockTotes
-  .filter(t => isToteOverdue(t))
+  .filter(isToteOverdue)
   .reduce((acc, tote) => {
-    const clientName = getClientNameFromNote(tote.notas) || 'Planta Principal (Interno)';
+    const cliente = mockClientes.find(c => c.id === tote.clienteId);
+    const clientName = cliente?.nombreEmpresa || 'Cliente Desconocido';
     acc[clientName] = (acc[clientName] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
@@ -121,5 +138,3 @@ export const mockKpiData: KpiData = {
   totesInUseByCompany,
   overdueTotes,
 };
-
-    
