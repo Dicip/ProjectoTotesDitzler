@@ -70,16 +70,7 @@ const getClientNameFromNote = (note?: string): string | null => {
 }
 
 // --- KPI Data Generation ---
-const userSignups = (): TimeSeriesDataPoint[] => {
-  const data: TimeSeriesDataPoint[] = [];
-  for (let i = 29; i >= 0; i--) { // 30 days of data
-    data.push({
-      date: format(subDays(new Date(), i), 'yyyy-MM-dd'),
-      value: Math.floor(Math.random() * 5) + (i % 7 === 0 ? 3 : 0), // Spike on weekends
-    });
-  }
-  return data;
-};
+const activeUsers = mockUsers.filter(user => user.status === 'Active').length;
 
 const totalTotes = mockTotes.length;
 
@@ -124,9 +115,11 @@ const overdueTotes: OverdueToteInfo[] = Object.entries(overdueTotesMap)
 
 // --- Final Export ---
 export const mockKpiData: KpiData = {
-  userSignups: userSignups(),
+  activeUsers,
   totalTotes,
   totesByStatus,
   totesInUseByCompany,
   overdueTotes,
 };
+
+    
