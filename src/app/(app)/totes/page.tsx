@@ -319,7 +319,34 @@ export default function TotesPage() {
               <FormField control={form.control} name="unidadCapacidad" render={({ field }) => ( <FormItem><FormLabel>Unidad</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="Litros">Litros</SelectItem><SelectItem value="Kg">Kg</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="estadoActual" render={({ field }) => ( <FormItem><FormLabel>Estado</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{TOTE_ESTADOS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="ubicacion" render={({ field }) => ( <FormItem><FormLabel>Ubicación</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{TOTE_UBICACIONES.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="clienteId" render={({ field }) => ( <FormItem><FormLabel>Cliente Asignado</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Ninguno"/></SelectTrigger></FormControl><SelectContent><SelectItem value="">Ninguno</SelectItem>{clientes.map(c => <SelectItem key={c.id} value={c.id}>{c.nombreEmpresa}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+              <FormField
+                control={form.control}
+                name="clienteId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cliente Asignado</FormLabel>
+                    <Select
+                      onValueChange={(value) => field.onChange(value === "null" ? null : value)}
+                      value={field.value ?? "null"}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Ninguno" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="null">Ninguno</SelectItem>
+                        {clientes.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.nombreEmpresa}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField control={form.control} name="producto" render={({ field }) => ( <FormItem><FormLabel>Producto</FormLabel><FormControl><Input {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="lote" render={({ field }) => ( <FormItem><FormLabel>Lote</FormLabel><FormControl><Input {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
               
