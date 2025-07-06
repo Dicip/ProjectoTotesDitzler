@@ -28,6 +28,9 @@ export async function updateTote(toteId: string, toteData: ToteFormData): Promis
         fechaDespacho = null; // Limpiar fecha de despacho si ya no está con el cliente
     }
 
+    const envasadoDate = toteData.fechaEnvasado ? new Date(toteData.fechaEnvasado) : null;
+    const vencimientoDate = toteData.fechaVencimiento ? new Date(toteData.fechaVencimiento) : null;
+
     const updatedTote: Tote = {
         ...originalTote,
         codigoIdentificacion: toteData.codigoIdentificacion,
@@ -41,8 +44,8 @@ export async function updateTote(toteId: string, toteData: ToteFormData): Promis
         producto: toteData.producto || undefined,
         clienteId: toteData.clienteId || null,
         lote: toteData.lote || undefined,
-        fechaEnvasado: toteData.fechaEnvasado ? new Date(toteData.fechaEnvasado).toISOString() : null,
-        fechaVencimiento: toteData.fechaVencimiento ? new Date(toteData.fechaVencimiento).toISOString() : null,
+        fechaEnvasado: envasadoDate && !isNaN(envasadoDate.getTime()) ? envasadoDate.toISOString() : null,
+        fechaVencimiento: vencimientoDate && !isNaN(vencimientoDate.getTime()) ? vencimientoDate.toISOString() : null,
         fechaDespacho: fechaDespacho,
     };
 
