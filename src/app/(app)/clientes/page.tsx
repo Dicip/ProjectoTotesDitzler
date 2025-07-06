@@ -65,9 +65,10 @@ import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import { mockClientes } from "@/data/mock-data";
 import type { Cliente, ClienteFormData } from "./schema";
 import { clienteFormSchema } from "./schema";
-import { fetchClientes, addCliente, updateCliente, deleteCliente } from "./actions";
 
 
 const tipoClienteTranslations: Record<Cliente["tipo"], string> = {
@@ -82,14 +83,17 @@ const estadoClienteTranslations: Record<Cliente["estado"], string> = {
 };
 
 export default function ClientesPage() {
-  const [clientes, setClientes] = React.useState<Cliente[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+  const [isClient, setIsClient] = React.useState(false);
+  const [clientes, setClientes] = useLocalStorage<Cliente[]>("dicipware_clientes", mockClientes);
   const [isAddOrEditClienteDialogOpen, setIsAddOrEditClienteDialogOpen] = React.useState(false);
   const [editingCliente, setEditingCliente] = React.useState<Cliente | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [deletingClienteId, setDeletingClienteId] = React.useState<string | null>(null);
   const { toast } = useToast();
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const form = useForm<ClienteFormData>({
     resolver: zodResolver(clienteFormSchema),
@@ -103,24 +107,6 @@ export default function ClientesPage() {
     },
   });
 
-  const loadClientes = React.useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const fetchedClientes = await fetchClientes();
-      setClientes(fetchedClientes);
-    } catch (e: any) {
-      setError(e.message || "No se pudieron cargar los clientes.");
-      toast({ variant: "destructive", title: "Error", description: e.message || "No se pudieron cargar los clientes." });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [toast]);
-
-  React.useEffect(() => {
-    loadClientes();
-  }, [loadClientes]);
-
   React.useEffect(() => {
     if (editingCliente) {
       form.reset(editingCliente);
@@ -132,13 +118,11 @@ export default function ClientesPage() {
 
   const handleOpenAddClienteDialog = () => {
     setEditingCliente(null);
-    // form.reset is handled by useEffect
     setIsAddOrEditClienteDialogOpen(true);
   };
 
   const handleOpenEditClienteDialog = (cliente: Cliente) => {
     setEditingCliente(cliente);
-    // form.reset is handled by useEffect
     setIsAddOrEditClienteDialogOpen(true);
   };
 
@@ -150,21 +134,24 @@ export default function ClientesPage() {
   const onSubmit = async (data: ClienteFormData) => {
     try {
       if (editingCliente) {
-        const result = await updateCliente(editingCliente.id, data);
-        if (result.success && result.cliente) {
-          setClientes(clientes.map((c) => (c.id === result.cliente!.id ? result.cliente! : c)));
-          toast({ title: "Cliente actualizado", description: `El cliente ${result.cliente.nombreEmpresa} ha sido actualizado.` });
-        } else {
-          throw new Error(result.error || "No se pudo actualizar el cliente.");
-        }
+        // Update existing client
+        const updatedCliente: Cliente = { ...editingCliente, ...data };
+        setClientes(clientes.map((c) => (c.id === editingCliente.id ? updatedCliente : c)));
+        toast({ title: "Cliente actualizado", description: `El cliente ${data.nombreEmpresa} ha sido actualizado.` });
       } else {
-        const result = await addCliente(data);
-         if (result.success && result.cliente) {
-          setClientes([result.cliente!, ...clientes]);
-          toast({ title: "Cliente agregado", description: `El cliente ${result.cliente.nombreEmpresa} ha sido agregado.` });
-        } else {
-          throw new Error(result.error || "No se pudo agregar el cliente.");
+        // Add new client
+        const existingCliente = clientes.find(c => c.nombreEmpresa.toLowerCase() === data.nombreEmpresa.toLowerCase());
+        if (existingCliente) {
+          throw new Error("Ya existe un cliente con este nombre de empresa.");
         }
+        const newCliente: Cliente = {
+          id: `cli_${new Date().getTime()}`,
+          ...data,
+          logoUrl: `https://placehold.co/40x40.png?text=${data.nombreEmpresa.substring(0,1)}`,
+          fechaCreacion: new Date().toISOString(),
+        };
+        setClientes([newCliente, ...clientes]);
+        toast({ title: "Cliente agregado", description: `El cliente ${data.nombreEmpresa} ha sido agregado.` });
       }
       setIsAddOrEditClienteDialogOpen(false);
       setEditingCliente(null);
@@ -177,15 +164,10 @@ export default function ClientesPage() {
     if (deletingClienteId) {
       const clienteToDelete = clientes.find(c => c.id === deletingClienteId);
       try {
-        const result = await deleteCliente(deletingClienteId);
-        if (result.success) {
-          setClientes(clientes.filter((c) => c.id !== deletingClienteId));
-          toast({ title: "Cliente eliminado", description: `El cliente ${clienteToDelete?.nombreEmpresa || ''} ha sido eliminado.`, variant: "destructive" });
-        } else {
-          throw new Error(result.error || "No se pudo eliminar el cliente.");
-        }
+        setClientes(clientes.filter((c) => c.id !== deletingClienteId));
+        toast({ title: "Cliente eliminado", description: `El cliente ${clienteToDelete?.nombreEmpresa || ''} ha sido eliminado.`, variant: "destructive" });
       } catch (e: any) {
-         toast({ variant: "destructive", title: "Error", description: e.message });
+         toast({ variant: "destructive", title: "Error", description: "No se pudo eliminar el cliente." });
       } finally {
         setIsDeleteDialogOpen(false);
         setDeletingClienteId(null);
@@ -197,7 +179,7 @@ export default function ClientesPage() {
     return [...clientes].sort((a,b) => a.nombreEmpresa.localeCompare(b.nombreEmpresa));
   }, [clientes]);
 
-  if (isLoading && clientes.length === 0) {
+  if (!isClient) {
      return (
       <div className="p-4 md:p-6 space-y-6">
         <Card>
@@ -223,23 +205,12 @@ export default function ClientesPage() {
             Gestión de Clientes
           </CardTitle>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={loadClientes} disabled={isLoading}>
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-              <span className="sr-only">Recargar</span>
-            </Button>
             <Button onClick={handleOpenAddClienteDialog}>
               <PlusCircle className="mr-2 h-4 w-4" /> Agregar Cliente
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-           {error && !isLoading && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error al Cargar Datos</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
           <Table>
             <TableHeader>
               <TableRow>
@@ -254,9 +225,7 @@ export default function ClientesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading && clientes.length === 0 ? (
-                 <TableRow><TableCell colSpan={8} className="h-24 text-center">Cargando clientes...</TableCell></TableRow>
-              ) : !isLoading && clientes.length === 0 && !error ? (
+              {clientes.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="h-24 text-center">
                     No hay clientes para mostrar.

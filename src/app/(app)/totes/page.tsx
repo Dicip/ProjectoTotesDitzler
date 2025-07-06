@@ -28,19 +28,34 @@ import { Calendar } from "@/components/ui/calendar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import type { Cliente } from "../clientes/schema";
-import { fetchClientes } from "../clientes/actions";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import { mockTotes, mockClientes } from "@/data/mock-data";
 
+import type { Cliente } from "../clientes/schema";
 import type { Tote, ToteFormData } from "./schema"; 
 import { toteFormSchema, TOTE_ESTADOS, TOTE_UBICACIONES } from "./schema"; 
-import { fetchTotes, updateTote, deleteTote } from "./actions";
 
+
+const isToteOverdue = (tote: Tote): boolean => {
+    if (tote.estadoActual !== "Con Cliente") return false;
+    
+    if (tote.fechaDespacho) {
+      try {
+        if (differenceInDays(new Date(), parseISO(tote.fechaDespacho)) >= 30) return true;
+      } catch (e) { console.error(e) }
+    }
+    if (tote.fechaVencimiento) {
+      try {
+        if (isBefore(parseISO(tote.fechaVencimiento), startOfDay(new Date()))) return true;
+      } catch (e) { console.error(e) }
+    }
+    return false;
+};
 
 export default function TotesPage() {
-  const [totes, setTotes] = React.useState<Tote[]>([]);
-  const [clientes, setClientes] = React.useState<Cliente[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+  const [isClient, setIsClient] = React.useState(false);
+  const [totes, setTotes] = useLocalStorage<Tote[]>("dicipware_totes", mockTotes);
+  const [clientes] = useLocalStorage<Cliente[]>("dicipware_clientes", mockClientes);
   const [isEditToteDialogOpen, setIsEditToteDialogOpen] = React.useState(false);
   const [editingTote, setEditingTote] = React.useState<Tote | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
@@ -48,32 +63,13 @@ export default function TotesPage() {
   const [searchTerm, setSearchTerm] = React.useState("");
   const { toast } = useToast();
 
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const form = useForm<ToteFormData>({
     resolver: zodResolver(toteFormSchema),
   });
-
-  const loadData = React.useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const [fetchedTotes, fetchedClientes] = await Promise.all([
-        fetchTotes(),
-        fetchClientes()
-      ]);
-      setTotes(fetchedTotes);
-      setClientes(fetchedClientes);
-    } catch (e: any) {
-      const errorMessage = e.message || "No se pudieron cargar los datos.";
-      setError(errorMessage);
-      toast({ variant: "destructive", title: "Error", description: errorMessage });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [toast]);
-
-  React.useEffect(() => {
-    loadData();
-  }, [loadData]);
 
   React.useEffect(() => {
     if (editingTote && isEditToteDialogOpen) {
@@ -107,15 +103,38 @@ export default function TotesPage() {
     if (!editingTote) return; 
 
     try {
-      const result = await updateTote(editingTote.id, data);
-      if (result.success && result.tote) {
-        setTotes(totes.map((t) => (t.id === result.tote!.id ? result.tote! : t)));
-        toast({ title: "Tote actualizado", description: `El tote ${result.tote.codigoIdentificacion} ha sido actualizado.` });
+        let fechaDespacho = editingTote.fechaDespacho;
+        if (data.estadoActual === 'Con Cliente' && editingTote.estadoActual !== 'Con Cliente') {
+            fechaDespacho = startOfDay(new Date()).toISOString();
+        } else if (data.estadoActual !== 'Con Cliente') {
+            fechaDespacho = null;
+        }
+
+        const envasadoDate = data.fechaEnvasado ? new Date(data.fechaEnvasado) : null;
+        const vencimientoDate = data.fechaVencimiento ? new Date(data.fechaVencimiento) : null;
+
+        const updatedTote: Tote = {
+            ...editingTote,
+            codigoIdentificacion: data.codigoIdentificacion,
+            tipoMaterial: data.tipoMaterial,
+            capacidad: data.capacidad,
+            unidadCapacidad: data.unidadCapacidad,
+            estadoActual: data.estadoActual,
+            ubicacion: data.ubicacion,
+            notas: data.notas || undefined,
+            producto: data.producto || undefined,
+            clienteId: data.clienteId || null,
+            lote: data.lote || undefined,
+            fechaEnvasado: envasadoDate && !isNaN(envasadoDate.getTime()) ? envasadoDate.toISOString() : null,
+            fechaVencimiento: vencimientoDate && !isNaN(vencimientoDate.getTime()) ? vencimientoDate.toISOString() : null,
+            fechaDespacho: fechaDespacho,
+        };
+        
+        setTotes(totes.map((t) => (t.id === updatedTote.id ? updatedTote : t)));
+        toast({ title: "Tote actualizado", description: `El tote ${updatedTote.codigoIdentificacion} ha sido actualizado.` });
         setIsEditToteDialogOpen(false);
         setEditingTote(null);
-      } else {
-        throw new Error(result.error || "No se pudo actualizar el tote.");
-      }
+
     } catch (e: any) {
       toast({ variant: "destructive", title: "Error de Actualización", description: e.message });
     }
@@ -125,15 +144,10 @@ export default function TotesPage() {
     if (deletingToteId) {
       const toteToDelete = totes.find(t => t.id === deletingToteId);
       try {
-        const result = await deleteTote(deletingToteId);
-        if (result.success) {
-          setTotes(totes.filter((t) => t.id !== deletingToteId));
-          toast({ title: "Tote eliminado", description: `El tote ${toteToDelete?.codigoIdentificacion || ''} ha sido eliminado.`});
-        } else {
-          throw new Error(result.error || "No se pudo eliminar el tote.");
-        }
+        setTotes(totes.filter((t) => t.id !== deletingToteId));
+        toast({ title: "Tote eliminado", description: `El tote ${toteToDelete?.codigoIdentificacion || ''} ha sido eliminado.`});
       } catch (e: any) {
-        toast({ variant: "destructive", title: "Error de Eliminación", description: e.message });
+        toast({ variant: "destructive", title: "Error de Eliminación", description: "No se pudo eliminar el tote." });
       } finally {
         setIsDeleteDialogOpen(false);
         setDeletingToteId(null);
@@ -156,23 +170,8 @@ export default function TotesPage() {
       .sort((a, b) => new Date(b.fechaAdquisicion).getTime() - new Date(a.fechaAdquisicion).getTime());
   }, [totes, searchTerm]);
 
-  const isToteOverdue = (tote: Tote): boolean => {
-    if (tote.estadoActual !== "Con Cliente") return false;
-    
-    if (tote.fechaDespacho) {
-      try {
-        if (differenceInDays(new Date(), parseISO(tote.fechaDespacho)) >= 30) return true;
-      } catch (e) { console.error(e) }
-    }
-    if (tote.fechaVencimiento) {
-      try {
-        if (isBefore(parseISO(tote.fechaVencimiento), startOfDay(new Date()))) return true;
-      } catch (e) { console.error(e) }
-    }
-    return false;
-  };
 
-  if (isLoading) {
+  if (!isClient) {
      return (
       <div className="p-4 md:p-6 space-y-6">
         <Card>
@@ -203,10 +202,6 @@ export default function TotesPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={loadData} disabled={isLoading}>
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-              <span className="sr-only">Recargar</span>
-            </Button>
             <Link href="/totes/informacion" legacyBehavior passHref>
               <Button variant="outline">
                 <Info className="mr-2 h-4 w-4" /> Ver Información General
@@ -215,13 +210,6 @@ export default function TotesPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {error && !isLoading && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error al Cargar Datos</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
           <div className="mb-4">
              <Input
                 placeholder="Buscar por código..."
@@ -247,7 +235,7 @@ export default function TotesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-             {!isLoading && filteredTotes.length === 0 ? (
+             {filteredTotes.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={10} className="h-24 text-center">
                     {searchTerm ? "No se encontraron totes con ese código." : "No hay totes registrados."}

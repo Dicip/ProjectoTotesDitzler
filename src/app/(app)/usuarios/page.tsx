@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -64,9 +65,11 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import { mockUsers } from "@/data/mock-data";
 import type { User, UserFormData } from "./schema"; 
 import { userFormSchema } from "./schema"; 
-import { fetchUsers, addUser, updateUser, deleteUser } from "./actions";
 
 
 const roleTranslations: Record<User["role"], string> = {
@@ -81,14 +84,17 @@ const statusTranslations: Record<User["status"], string> = {
 };
 
 export default function UsuariosPage() {
-  const [users, setUsers] = React.useState<User[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+  const [isClient, setIsClient] = React.useState(false);
+  const [users, setUsers] = useLocalStorage<User[]>("dicipware_users", mockUsers);
   const [isAddOrEditUserDialogOpen, setIsAddOrEditUserDialogOpen] = React.useState(false);
   const [editingUser, setEditingUser] = React.useState<User | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [deletingUserId, setDeletingUserId] = React.useState<string | null>(null);
   const { toast } = useToast();
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const form = useForm<UserFormData>({ 
     resolver: zodResolver(userFormSchema), 
@@ -99,24 +105,6 @@ export default function UsuariosPage() {
       status: "Active",
     },
   });
-
-  const loadUsers = React.useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const fetchedUsers = await fetchUsers();
-      setUsers(fetchedUsers);
-    } catch (e: any) {
-      setError(e.message || "No se pudieron cargar los usuarios.");
-      toast({ variant: "destructive", title: "Error", description: e.message || "No se pudieron cargar los usuarios." });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [toast]);
-
-  React.useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
 
   React.useEffect(() => {
     if (editingUser) {
@@ -134,13 +122,11 @@ export default function UsuariosPage() {
 
   const handleOpenAddUserDialog = () => {
     setEditingUser(null);
-    // form.reset is handled by useEffect
     setIsAddOrEditUserDialogOpen(true);
   };
 
   const handleOpenEditUserDialog = (user: User) => {
     setEditingUser(user);
-    // form.reset is handled by useEffect
     setIsAddOrEditUserDialogOpen(true);
   };
 
@@ -152,21 +138,32 @@ export default function UsuariosPage() {
   const onSubmit = async (data: UserFormData) => {
     try {
       if (editingUser) {
-        const result = await updateUser(editingUser.id, data);
-        if (result.success && result.user) {
-          setUsers(users.map((u) => (u.id === result.user!.id ? result.user! : u)));
-          toast({ title: "Usuario actualizado", description: `El usuario ${result.user.name} ha sido actualizado.` });
-        } else {
-          throw new Error(result.error || "No se pudo actualizar el usuario.");
+        // Update existing user
+        if (data.email.toLowerCase() !== editingUser.email.toLowerCase()) {
+          const existingUser = users.find(u => u.email.toLowerCase() === data.email.toLowerCase() && u.id !== editingUser.id);
+          if (existingUser) {
+            throw new Error("Ya existe otro usuario con este email.");
+          }
         }
+        const updatedUser: User = { ...editingUser, ...data };
+        setUsers(users.map((u) => (u.id === editingUser.id ? updatedUser : u)));
+        toast({ title: "Usuario actualizado", description: `El usuario ${data.name} ha sido actualizado.` });
+
       } else {
-        const result = await addUser(data);
-         if (result.success && result.user) {
-          setUsers([result.user!, ...users]); // Add to start of list
-          toast({ title: "Usuario agregado", description: `El usuario ${result.user.name} ha sido agregado.` });
-        } else {
-          throw new Error(result.error || "No se pudo agregar el usuario.");
+        // Add new user
+        const existingUser = users.find(u => u.email.toLowerCase() === data.email.toLowerCase());
+        if (existingUser) {
+          throw new Error("Ya existe un usuario con este email.");
         }
+        const newUser: User = {
+          id: `usr_${new Date().getTime()}`,
+          ...data,
+          avatar: `https://placehold.co/40x40.png?text=${data.name.substring(0,1)}`,
+          createdAt: new Date().toISOString(),
+          registeredBy: 'Admin Panel',
+        };
+        setUsers([newUser, ...users]);
+        toast({ title: "Usuario agregado", description: `El usuario ${data.name} ha sido agregado.` });
       }
       setIsAddOrEditUserDialogOpen(false);
       setEditingUser(null);
@@ -179,15 +176,10 @@ export default function UsuariosPage() {
     if (deletingUserId) {
       const userToDelete = users.find(u => u.id === deletingUserId);
       try {
-        const result = await deleteUser(deletingUserId);
-        if (result.success) {
-          setUsers(users.filter((u) => u.id !== deletingUserId));
-          toast({ title: "Usuario eliminado", description: `El usuario ${userToDelete?.name || ''} ha sido eliminado.` });
-        } else {
-          throw new Error(result.error || "No se pudo eliminar el usuario.");
-        }
+        setUsers(users.filter((u) => u.id !== deletingUserId));
+        toast({ title: "Usuario eliminado", description: `El usuario ${userToDelete?.name || ''} ha sido eliminado.` });
       } catch (e: any) {
-         toast({ variant: "destructive", title: "Error", description: e.message });
+         toast({ variant: "destructive", title: "Error", description: "No se pudo eliminar el usuario." });
       } finally {
         setIsDeleteDialogOpen(false);
         setDeletingUserId(null);
@@ -200,7 +192,7 @@ export default function UsuariosPage() {
   }, [users]);
 
 
-  if (isLoading && users.length === 0) {
+  if (!isClient) {
     return (
       <div className="p-4 md:p-6 space-y-6">
         <Card>
@@ -227,23 +219,12 @@ export default function UsuariosPage() {
             Gestión de Usuarios
           </CardTitle>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={loadUsers} disabled={isLoading}>
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-              <span className="sr-only">Recargar</span>
-            </Button>
             <Button onClick={handleOpenAddUserDialog}>
               <PlusCircle className="mr-2 h-4 w-4" /> Agregar Usuario
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          {error && !isLoading && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error al Cargar Datos</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
           <Table>
             <TableHeader>
               <TableRow>
@@ -258,9 +239,7 @@ export default function UsuariosPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading && users.length === 0 ? (
-                 <TableRow><TableCell colSpan={8} className="h-24 text-center">Cargando usuarios...</TableCell></TableRow>
-              ) : !isLoading && users.length === 0 && !error ? (
+              {users.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="h-24 text-center">
                     No hay usuarios para mostrar.
@@ -355,7 +334,7 @@ export default function UsuariosPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Rol</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccione un rol" />
@@ -377,7 +356,7 @@ export default function UsuariosPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Estado</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccione un estado" />
