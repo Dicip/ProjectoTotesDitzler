@@ -50,3 +50,5 @@ Esta aplicación está configurada para funcionar exclusivamente en modo de demo
 -   Tailwind CSS
 -   ShadCN UI
 -   Genkit (para IA)
+
+DicipWare
