@@ -105,6 +105,7 @@ export default function TotesPage() {
   const [editingTote, setEditingTote] = React.useState<Tote | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [deletingToteId, setDeletingToteId] = React.useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = React.useState("");
   const { toast } = useToast();
 
   const form = useForm<ToteFormData>({
@@ -200,9 +201,13 @@ export default function TotesPage() {
     }
   };
   
-  const sortedTotes = React.useMemo(() => {
-    return [...totes].sort((a, b) => new Date(b.fechaAdquisicion).getTime() - new Date(a.fechaAdquisicion).getTime());
-  }, [totes]);
+  const filteredTotes = React.useMemo(() => {
+    return totes
+      .filter((tote) =>
+        tote.codigoIdentificacion.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      .sort((a, b) => new Date(b.fechaAdquisicion).getTime() - new Date(a.fechaAdquisicion).getTime());
+  }, [totes, searchTerm]);
 
   const isToteOverdue = (tote: Tote): boolean => {
     if (tote.estadoActual === "En Uso" && tote.fechaRetornoPrevista) {
@@ -265,6 +270,14 @@ export default function TotesPage() {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
+          <div className="mb-4">
+             <Input
+                placeholder="Buscar por código..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-sm"
+              />
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
@@ -282,14 +295,14 @@ export default function TotesPage() {
             <TableBody>
              {isLoading && totes.length === 0 ? (
                  <TableRow><TableCell colSpan={9} className="h-24 text-center">Cargando totes...</TableCell></TableRow>
-              ) : !isLoading && totes.length === 0 && !error ? (
+              ) : !isLoading && filteredTotes.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="h-24 text-center">
-                    No hay totes registrados en el sistema.
+                    {searchTerm ? "No se encontraron totes con ese código." : "No hay totes registrados en el sistema."}
                   </TableCell>
                 </TableRow>
               ) : (
-                sortedTotes.map((tote) => (
+                filteredTotes.map((tote) => (
                   <TableRow key={tote.id} className={cn(isToteOverdue(tote) && "bg-destructive/10 hover:bg-destructive/20")}>
                     <TableCell className="font-medium">{tote.codigoIdentificacion}</TableCell>
                     <TableCell>{tipoMaterialTranslations[tote.tipoMaterial]}</TableCell>
