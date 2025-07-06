@@ -15,6 +15,7 @@ export const mockUsers: User[] = [
   { id: '2', name: 'Carlos Gómez (Editor)', email: 'carlos.gomez@example.com', role: 'Editor', status: 'Active', avatar: 'https://placehold.co/40x40.png?text=CG', createdAt: subDays(new Date(), 10).toISOString(), registeredBy: 'Admin Panel' },
   { id: '3', name: 'Lucía Fernández (Viewer)', email: 'lucia.fernandez@example.com', role: 'Viewer', status: 'Inactive', avatar: 'https://placehold.co/40x40.png?text=LF', createdAt: subDays(new Date(), 25).toISOString(), registeredBy: 'API' },
   { id: '4', name: 'Jorge Díaz (Viewer)', email: 'jorge.diaz@example.com', role: 'Viewer', status: 'Active', avatar: 'https://placehold.co/40x40.png?text=JD', createdAt: subDays(new Date(), 40).toISOString(), registeredBy: 'Admin Panel' },
+  { id: '5', name: 'Miguel Bosé (Editor)', email: 'miguel.bose@example.com', role: 'Editor', status: 'Active', avatar: 'https://placehold.co/40x40.png?text=MB', createdAt: subDays(new Date(), 5).toISOString(), registeredBy: 'API' },
 ];
 
 
@@ -24,32 +25,51 @@ export const mockClientes: Cliente[] = [
     { id: '203', nombreEmpresa: 'Retail del Sur S.A.', contactoPrincipal: 'Isidora Neira', emailContacto: 'isidora.n@retailsur.cl', telefono: '+56955554444', tipo: 'Minorista', estado: 'Inactivo', logoUrl: 'https://placehold.co/40x40.png?text=RS', fechaCreacion: subDays(new Date(), 150).toISOString() },
     { id: '204', nombreEmpresa: 'Exportadora Sol Radiante S.A.', contactoPrincipal: 'Roberto Parra', emailContacto: 'roberto.p@solradiante.com', telefono: '+56223456789', tipo: 'Mayorista', estado: 'Activo', logoUrl: 'https://placehold.co/40x40.png?text=SR', fechaCreacion: subDays(new Date(), 80).toISOString() },
     { id: '205', nombreEmpresa: 'Agroindustrial Los Andes', contactoPrincipal: 'Carmen Gloria Soto', emailContacto: 'cgloria.s@agroandes.cl', telefono: '+56977778888', tipo: 'Distribuidor', estado: 'Activo', logoUrl: 'https://placehold.co/40x40.png?text=AL', fechaCreacion: subDays(new Date(), 400).toISOString() },
+    { id: '206', nombreEmpresa: 'Supermercados del Pacífico', contactoPrincipal: 'Ana Torroja', emailContacto: 'atorroja@spacifico.cl', telefono: '+56966667777', tipo: 'Minorista', estado: 'Activo', logoUrl: 'https://placehold.co/40x40.png?text=SP', fechaCreacion: subDays(new Date(), 90).toISOString() },
 ];
 
 export const mockTotes: Tote[] = [
-    // Tote 1: OK, with client < 30 days
+    // --- Existing Totes ---
     { id: '101', codigoIdentificacion: 'TOTE-PL-001', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'Con Cliente', ubicacion: 'Cliente', fechaAdquisicion: subDays(new Date(), 50).toISOString(), 
       producto: 'Pulpa de Frutilla', lote: 'L-202405A', clienteId: '201', fechaEnvasado: subDays(new Date(), 15).toISOString(), fechaVencimiento: addDays(new Date(), 45).toISOString(), fechaDespacho: subDays(new Date(), 15).toISOString(), notas: `Ruta Santiago` },
-    // Tote 2: OK, Disponible
     { id: '102', codigoIdentificacion: 'TOTE-AI-002', tipoMaterial: 'Acero Inoxidable', capacidad: 500, unidadCapacidad: 'Kg', estadoActual: 'Disponible', ubicacion: 'Patio de recepción', fechaAdquisicion: subDays(new Date(), 120).toISOString() },
-    // Tote 3: OK, En Lavado
     { id: '103', codigoIdentificacion: 'TOTE-PL-003', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'En Lavado', ubicacion: 'Ken – Lavadora de CIP y COP de totes', fechaAdquisicion: subDays(new Date(), 30).toISOString(), notas: 'Limpieza profunda requerida' },
-    // Tote 4: FUERA DE PLAZO (> 30 days with client)
     { id: '104', codigoIdentificacion: 'TOTE-PL-004', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'Con Cliente', ubicacion: 'Cliente', fechaAdquisicion: subDays(new Date(), 40).toISOString(), 
       producto: 'Mermelada de Mora', lote: 'L-202404B', clienteId: '202', fechaEnvasado: subDays(new Date(), 35).toISOString(), fechaVencimiento: addDays(new Date(), 25).toISOString(), fechaDespacho: subDays(new Date(), 35).toISOString(), notas: `Ruta Valparaíso` },
-    // Tote 5: OK, En Mantenimiento
     { id: '105', codigoIdentificacion: 'TOTE-OT-005', tipoMaterial: 'Otro', capacidad: 750, unidadCapacidad: 'Litros', estadoActual: 'En Mantenimiento', ubicacion: 'Antecámara Planta', fechaAdquisicion: subDays(new Date(), 200).toISOString(), notas: 'Válvula defectuosa' },
-    // Tote 6: FUERA DE PLAZO (Expired product)
     { id: '106', codigoIdentificacion: 'TOTE-PL-006', tipoMaterial: 'Plástico HDPE', capacidad: 1200, unidadCapacidad: 'Litros', estadoActual: 'Con Cliente', ubicacion: 'Cliente', fechaAdquisicion: subDays(new Date(), 15).toISOString(), 
       producto: 'Pulpa de Manzana', lote: 'L-202405C', clienteId: '204', fechaEnvasado: subDays(new Date(), 10).toISOString(), fechaVencimiento: subDays(new Date(), 1).toISOString(), fechaDespacho: subDays(new Date(), 10).toISOString() },
-    // Tote 7: OK, En produccion
     { id: '107', codigoIdentificacion: 'TOTE-PL-007', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'En Uso', ubicacion: 'Producción (Envasado)', fechaAdquisicion: subDays(new Date(), 45).toISOString(),
       producto: 'Pulpa de Frambuesa', lote: 'L-202405D', fechaEnvasado: new Date().toISOString() },
-    // Tote 8: OK, Almacenado en cámara
     { id: '108', codigoIdentificacion: 'TOTE-PL-008', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'Disponible', ubicacion: 'Cámara 1', fechaAdquisicion: subDays(new Date(), 60).toISOString(),
       producto: 'Jugo de Arándano', lote: 'L-202405E', fechaEnvasado: subDays(new Date(), 2).toISOString(), fechaVencimiento: addDays(new Date(), 90).toISOString() },
-    // Tote 9: De Baja
     { id: '114', codigoIdentificacion: 'TOTE-AI-014', tipoMaterial: 'Acero Inoxidable', capacidad: 500, unidadCapacidad: 'Kg', estadoActual: 'De Baja', ubicacion: 'Patio de recepción', fechaAdquisicion: subDays(new Date(), 500).toISOString(), notas: 'Fisura irreparable' },
+    
+    // --- New Totes for Larger Dataset ---
+    { id: '109', codigoIdentificacion: 'TOTE-AI-009', tipoMaterial: 'Acero Inoxidable', capacidad: 500, unidadCapacidad: 'Kg', estadoActual: 'Disponible', ubicacion: 'Antecámara CALM I', fechaAdquisicion: subDays(new Date(), 180).toISOString() },
+    { id: '110', codigoIdentificacion: 'TOTE-PL-010', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'Con Cliente', ubicacion: 'Cliente', fechaAdquisicion: subDays(new Date(), 90).toISOString(), 
+      producto: 'Pulpa de Durazno', lote: 'L-202406A', clienteId: '205', fechaEnvasado: subDays(new Date(), 20).toISOString(), fechaVencimiento: addDays(new Date(), 40).toISOString(), fechaDespacho: subDays(new Date(), 20).toISOString(), notas: 'Entrega en Rancagua' },
+    { id: '111', codigoIdentificacion: 'TOTE-PL-011', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'En Uso', ubicacion: 'Producción (Envasado)', fechaAdquisicion: subDays(new Date(), 90).toISOString(),
+      producto: 'Jugo Concentrado Manzana', lote: 'L-202406B', fechaEnvasado: subDays(new Date(), 1).toISOString() },
+    { id: '112', codigoIdentificacion: 'TOTE-PL-012', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'Con Cliente', ubicacion: 'Cliente', fechaAdquisicion: subDays(new Date(), 150).toISOString(), 
+      producto: 'Pulpa de Ciruela', lote: 'L-202404C', clienteId: '201', fechaEnvasado: subDays(new Date(), 40).toISOString(), fechaVencimiento: addDays(new Date(), 20).toISOString(), fechaDespacho: subDays(new Date(), 40).toISOString() },
+    { id: '113', codigoIdentificacion: 'TOTE-AI-013', tipoMaterial: 'Acero Inoxidable', capacidad: 500, unidadCapacidad: 'Kg', estadoActual: 'En Lavado', ubicacion: 'Ken – Lavadora de CIP y COP de totes', fechaAdquisicion: subDays(new Date(), 250).toISOString() },
+    { id: '115', codigoIdentificacion: 'TOTE-PL-015', tipoMaterial: 'Plástico HDPE', capacidad: 1200, unidadCapacidad: 'Litros', estadoActual: 'Disponible', ubicacion: 'Cámara 1', fechaAdquisicion: subDays(new Date(), 70).toISOString(),
+      producto: 'Mermelada de Damasco', lote: 'L-202406C', fechaEnvasado: subDays(new Date(), 5).toISOString(), fechaVencimiento: addDays(new Date(), 85).toISOString() },
+    { id: '116', codigoIdentificacion: 'TOTE-PL-016', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'Con Cliente', ubicacion: 'Cliente', fechaAdquisicion: subDays(new Date(), 80).toISOString(),
+      producto: 'Pulpa de Frutilla', lote: 'L-202406D', clienteId: '206', fechaEnvasado: subDays(new Date(), 5).toISOString(), fechaVencimiento: addDays(new Date(), 55).toISOString(), fechaDespacho: subDays(new Date(), 5).toISOString() },
+    { id: '117', codigoIdentificacion: 'TOTE-PL-017', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'En Mantenimiento', ubicacion: 'Antecámara Planta', fechaAdquisicion: subDays(new Date(), 300).toISOString(), notas: 'Revisión de estructura' },
+    { id: '118', codigoIdentificacion: 'TOTE-AI-018', tipoMaterial: 'Acero Inoxidable', capacidad: 500, unidadCapacidad: 'Kg', estadoActual: 'Con Cliente', ubicacion: 'Cliente', fechaAdquisicion: subDays(new Date(), 90).toISOString(),
+      producto: 'Pulpa de Pera', lote: 'L-202405F', clienteId: '204', fechaEnvasado: subDays(new Date(), 25).toISOString(), fechaVencimiento: subDays(new Date(), 2).toISOString(), fechaDespacho: subDays(new Date(), 25).toISOString() },
+    { id: '119', codigoIdentificacion: 'TOTE-PL-019', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'Disponible', ubicacion: 'Antecámara CALM II', fechaAdquisicion: subDays(new Date(), 100).toISOString() },
+    { id: '120', codigoIdentificacion: 'TOTE-PL-020', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'En Uso', ubicacion: 'Producción (Envasado)', fechaAdquisicion: subDays(new Date(), 110).toISOString(),
+      producto: 'Jugo de Uva', lote: 'L-202406E', fechaEnvasado: new Date().toISOString() },
+    { id: '121', codigoIdentificacion: 'TOTE-PL-021', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'Con Cliente', ubicacion: 'Cliente', fechaAdquisicion: subDays(new Date(), 220).toISOString(),
+      producto: 'Mermelada de Frambuesa', lote: 'L-202404D', clienteId: '205', fechaEnvasado: subDays(new Date(), 50).toISOString(), fechaVencimiento: addDays(new Date(), 10).toISOString(), fechaDespacho: subDays(new Date(), 50).toISOString() },
+    { id: '122', codigoIdentificacion: 'TOTE-AI-022', tipoMaterial: 'Acero Inoxidable', capacidad: 500, unidadCapacidad: 'Kg', estadoActual: 'Disponible', ubicacion: 'Patio de recepción', fechaAdquisicion: subDays(new Date(), 400).toISOString() },
+    { id: '123', codigoIdentificacion: 'TOTE-PL-023', tipoMaterial: 'Plástico HDPE', capacidad: 1200, unidadCapacidad: 'Litros', estadoActual: 'Con Cliente', ubicacion: 'Cliente', fechaAdquisicion: subDays(new Date(), 40).toISOString(),
+      producto: 'Pulpa de Manzana', lote: 'L-202406F', clienteId: '206', fechaEnvasado: subDays(new Date(), 3).toISOString(), fechaVencimiento: addDays(new Date(), 87).toISOString(), fechaDespacho: subDays(new Date(), 3).toISOString() },
+    { id: '124', codigoIdentificacion: 'TOTE-PL-024', tipoMaterial: 'Plástico HDPE', capacidad: 1000, unidadCapacidad: 'Litros', estadoActual: 'De Baja', ubicacion: 'Patio de recepción', fechaAdquisicion: subDays(new Date(), 600).toISOString(), notas: 'Daño estructural por caída.' }
 ];
 
 
