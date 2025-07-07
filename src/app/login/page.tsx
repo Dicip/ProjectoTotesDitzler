@@ -89,70 +89,84 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="space-y-1 text-center">
-          <div className="flex justify-center mb-4">
-            <Image
-              src="/img/logo.jpg"
-              alt="Ditzler Chile Logo"
-              width={180}
-              height={45}
-              data-ai-hint="logo"
-            />
-          </div>
-          <CardTitle className="text-2xl font-bold">Bienvenido a Ditzler Chile</CardTitle>
-          <CardDescription>
-            Ingrese sus credenciales para acceder al panel.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error de Inicio de Sesión</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email o Usuario</FormLabel>
-                    <FormControl>
-                      <Input type="text" placeholder="su@email.com o adm" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+    <div className="relative min-h-screen">
+      <div className="absolute inset-0 z-[-1]">
+        <Image 
+          src="/img/berries-background.jpg"
+          alt="Fondo de frutos rojos variados"
+          fill
+          style={{ objectFit: 'cover' }}
+          quality={90}
+          priority
+          data-ai-hint="berries background"
+        />
+        <div className="absolute inset-0 bg-black/50" />
+      </div>
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-xl bg-card/90 backdrop-blur-sm">
+          <CardHeader className="space-y-1 text-center">
+            <div className="flex justify-center mb-4">
+              <Image
+                src="/img/logo.jpg"
+                alt="Ditzler Chile Logo"
+                width={180}
+                height={45}
+                data-ai-hint="logo"
               />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Contraseña</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="********" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Ingresando..." : (
-                  <>
-                    <LogIn className="mr-2 h-4 w-4" /> Iniciar Sesión
-                  </>
-                )}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+            </div>
+            <CardTitle className="text-2xl font-bold">Bienvenido a Ditzler Chile</CardTitle>
+            <CardDescription>
+              Ingrese sus credenciales para acceder al panel.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error de Inicio de Sesión</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email o Usuario</FormLabel>
+                      <FormControl>
+                        <Input type="text" placeholder="su@email.com o adm" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Contraseña</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="********" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Ingresando..." : (
+                    <>
+                      <LogIn className="mr-2 h-4 w-4" /> Iniciar Sesión
+                    </>
+                  )}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
