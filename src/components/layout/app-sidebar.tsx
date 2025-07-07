@@ -4,7 +4,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation"; // Added useRouter
-import { LayoutDashboard, Package, Users, Briefcase, Settings, Moon, Sun, LogOut } from "lucide-react"; // Added LogOut
+import { LayoutDashboard, Package, Users, Briefcase, Settings, Moon, Sun, LogOut, UserCircle } from "lucide-react"; // Added LogOut
 import {
   Sidebar,
   SidebarHeader,
@@ -18,7 +18,8 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem, // Added DropdownMenuItem
+  DropdownMenuItem,
+  DropdownMenuSeparator, // Added DropdownMenuItem
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
@@ -96,6 +97,13 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" align="center" className="w-56 mb-1">
+                 <DropdownMenuItem asChild>
+                    <Link href="/perfil" className="cursor-pointer">
+                      <UserCircle className="mr-2 h-4 w-4" />
+                      <span>Mi Perfil</span>
+                    </Link>
+                 </DropdownMenuItem>
+                 <DropdownMenuSeparator />
                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="focus:bg-transparent cursor-default">
                     <div className="flex items-center justify-between w-full py-1">
                         <Label htmlFor="dark-mode-toggle" className="flex items-center cursor-pointer text-sm text-foreground">
