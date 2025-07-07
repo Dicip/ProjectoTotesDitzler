@@ -28,9 +28,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { useLocalStorage } from "@/hooks/use-local-storage";
-import { mockTotes, mockClientes } from "@/data/mock-data";
+import { mockTotes, mockClientes, mockUsers } from "@/data/mock-data";
 
 import type { Cliente } from "../clientes/schema";
+import type { User } from "../usuarios/schema";
 import type { Tote, ToteFormData } from "./schema"; 
 import { toteFormSchema, TOTE_ESTADOS, TOTE_UBICACIONES } from "./schema"; 
 
@@ -55,6 +56,7 @@ export default function TotesPage() {
   const [isClient, setIsClient] = React.useState(false);
   const [totes, setTotes] = useLocalStorage<Tote[]>("dicipware_totes", mockTotes);
   const [clientes] = useLocalStorage<Cliente[]>("dicipware_clientes", mockClientes);
+  const [users] = useLocalStorage<User[]>("dicipware_users", mockUsers);
   const [isEditToteDialogOpen, setIsEditToteDialogOpen] = React.useState(false);
   const [editingTote, setEditingTote] = React.useState<Tote | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
@@ -64,6 +66,7 @@ export default function TotesPage() {
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [locationFilter, setLocationFilter] = React.useState("all");
   const [clientFilter, setClientFilter] = React.useState("all");
+  const [operatorFilter, setOperatorFilter] = React.useState("all");
   
   const [isScanDialogOpen, setIsScanDialogOpen] = React.useState(false);
   const [scanCode, setScanCode] = React.useState("");
@@ -85,6 +88,7 @@ export default function TotesPage() {
       ubicacion: "Patio de recepción",
       producto: "",
       clienteId: null,
+      operadorId: null,
       lote: "",
       fechaEnvasado: null,
       fechaVencimiento: null,
@@ -104,6 +108,7 @@ export default function TotesPage() {
         ubicacion: "Patio de recepción",
         producto: "",
         clienteId: null,
+        operadorId: null,
         lote: "",
         fechaEnvasado: null,
         fechaVencimiento: null,
@@ -116,6 +121,7 @@ export default function TotesPage() {
         fechaVencimiento: editingTote.fechaVencimiento ? format(parseISO(editingTote.fechaVencimiento), "yyyy-MM-dd") : null,
         notas: editingTote.notas || "",
         clienteId: editingTote.clienteId || null,
+        operadorId: editingTote.operadorId || null,
         lote: editingTote.lote || "",
         producto: editingTote.producto || "",
       });
@@ -127,6 +133,7 @@ export default function TotesPage() {
     setStatusFilter("all");
     setLocationFilter("all");
     setClientFilter("all");
+    setOperatorFilter("all");
   };
 
   const handleOpenAddToteDialog = () => {
@@ -168,6 +175,7 @@ export default function TotesPage() {
         ubicacion: "Patio de recepción",
         producto: "",
         clienteId: null,
+        operadorId: null,
         lote: "",
         fechaEnvasado: null,
         fechaVencimiento: null,
@@ -216,6 +224,7 @@ export default function TotesPage() {
                 ...data,
                 producto: data.producto || undefined,
                 clienteId: data.clienteId || null,
+                operadorId: data.operadorId || null,
                 lote: data.lote || undefined,
                 fechaEnvasado: envasadoDate && !isNaN(envasadoDate.getTime()) ? envasadoDate.toISOString() : null,
                 fechaVencimiento: vencimientoDate && !isNaN(vencimientoDate.getTime()) ? vencimientoDate.toISOString() : null,
@@ -255,6 +264,13 @@ export default function TotesPage() {
       return acc;
     }, {} as Record<string, string>), 
   [clientes]);
+
+  const usersMap = React.useMemo(() => 
+    users.reduce((acc, user) => {
+      acc[user.id] = user.name;
+      return acc;
+    }, {} as Record<string, string>), 
+  [users]);
   
   const filteredTotes = React.useMemo(() => {
     return totes
@@ -273,8 +289,13 @@ export default function TotesPage() {
         if (clientFilter === "none") return !tote.clienteId;
         return tote.clienteId === clientFilter;
       })
+      .filter((tote) => {
+        if (operatorFilter === "all") return true;
+        if (operatorFilter === "none") return !tote.operadorId;
+        return tote.operadorId === operatorFilter;
+      })
       .sort((a, b) => new Date(b.fechaAdquisicion).getTime() - new Date(a.fechaAdquisicion).getTime());
-  }, [totes, searchTerm, statusFilter, locationFilter, clientFilter]);
+  }, [totes, searchTerm, statusFilter, locationFilter, clientFilter, operatorFilter]);
 
 
   if (!isClient) {
@@ -322,16 +343,16 @@ export default function TotesPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 mb-6">
+          <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 mb-6 flex-wrap">
              <Input
                 placeholder="Buscar por código, producto, lote..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-grow"
+                className="flex-grow min-w-[200px]"
               />
-              <div className="flex w-full md:w-auto items-center gap-2">
+              <div className="flex w-full md:w-auto items-center gap-2 flex-wrap">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-full md:w-[160px]">
+                    <SelectTrigger className="w-full sm:w-auto md:w-[160px]">
                         <SelectValue placeholder="Estado" />
                     </SelectTrigger>
                     <SelectContent>
@@ -340,7 +361,7 @@ export default function TotesPage() {
                     </SelectContent>
                 </Select>
                  <Select value={locationFilter} onValueChange={setLocationFilter}>
-                    <SelectTrigger className="w-full md:w-[160px]">
+                    <SelectTrigger className="w-full sm:w-auto md:w-[160px]">
                         <SelectValue placeholder="Ubicación" />
                     </SelectTrigger>
                     <SelectContent>
@@ -349,13 +370,23 @@ export default function TotesPage() {
                     </SelectContent>
                 </Select>
                  <Select value={clientFilter} onValueChange={setClientFilter}>
-                    <SelectTrigger className="w-full md:w-[160px]">
+                    <SelectTrigger className="w-full sm:w-auto md:w-[160px]">
                         <SelectValue placeholder="Cliente" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">Todos los Clientes</SelectItem>
                         <SelectItem value="none">Sin Asignar</SelectItem>
                         {clientes.map(c => <SelectItem key={c.id} value={c.id}>{c.nombreEmpresa}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+                <Select value={operatorFilter} onValueChange={setOperatorFilter}>
+                    <SelectTrigger className="w-full sm:w-auto md:w-[160px]">
+                        <SelectValue placeholder="Operador" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos los Operadores</SelectItem>
+                        <SelectItem value="none">Sin Asignar</SelectItem>
+                        {users.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
                     </SelectContent>
                 </Select>
                 <Button variant="ghost" onClick={handleClearFilters} className="px-3">
@@ -372,6 +403,7 @@ export default function TotesPage() {
                 <TableHead>Estado</TableHead>
                 <TableHead>Ubicación</TableHead>
                 <TableHead>Cliente</TableHead>
+                <TableHead>Operador</TableHead>
                 <TableHead>Producto</TableHead>
                 <TableHead>Lote</TableHead>
                 <TableHead>F. Envasado</TableHead>
@@ -383,7 +415,7 @@ export default function TotesPage() {
             <TableBody>
              {filteredTotes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="h-24 text-center">
+                  <TableCell colSpan={11} className="h-24 text-center">
                     No se encontraron totes con los filtros actuales.
                   </TableCell>
                 </TableRow>
@@ -398,6 +430,7 @@ export default function TotesPage() {
                     </TableCell>
                     <TableCell>{tote.ubicacion}</TableCell>
                     <TableCell>{tote.clienteId ? clientesMap[tote.clienteId] || "N/A" : "-"}</TableCell>
+                    <TableCell>{tote.operadorId ? usersMap[tote.operadorId] || "N/A" : "-"}</TableCell>
                     <TableCell>{tote.producto || "-"}</TableCell>
                     <TableCell>{tote.lote || "-"}</TableCell>
                     <TableCell>{tote.fechaEnvasado ? format(parseISO(tote.fechaEnvasado), "P", { locale: es }) : "-"}</TableCell>
@@ -497,6 +530,34 @@ export default function TotesPage() {
                         {clientes.map((c) => (
                           <SelectItem key={c.id} value={c.id}>
                             {c.nombreEmpresa}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="operadorId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Operador a Cargo</FormLabel>
+                    <Select
+                      onValueChange={(value) => field.onChange(value === "null" ? null : value)}
+                      value={field.value ?? "null"}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Ninguno" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="null">Ninguno</SelectItem>
+                        {users.map((u) => (
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

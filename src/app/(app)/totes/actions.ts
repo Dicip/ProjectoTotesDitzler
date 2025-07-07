@@ -30,6 +30,7 @@ export async function addTote(toteData: ToteFormData): Promise<{ success: boolea
     fechaAdquisicion: new Date().toISOString(), // Set acquisition date on creation
     producto: toteData.producto || undefined,
     clienteId: toteData.clienteId || null,
+    operadorId: toteData.operadorId || null,
     lote: toteData.lote || undefined,
     fechaEnvasado: envasadoDate && !isNaN(envasadoDate.getTime()) ? envasadoDate.toISOString() : null,
     fechaVencimiento: vencimientoDate && !isNaN(vencimientoDate.getTime()) ? vencimientoDate.toISOString() : null,
@@ -74,6 +75,7 @@ export async function updateTote(toteId: string, toteData: ToteFormData): Promis
         // Nuevos campos
         producto: toteData.producto || undefined,
         clienteId: toteData.clienteId || null,
+        operadorId: toteData.operadorId || null,
         lote: toteData.lote || undefined,
         fechaEnvasado: envasadoDate && !isNaN(envasadoDate.getTime()) ? envasadoDate.toISOString() : null,
         fechaVencimiento: vencimientoDate && !isNaN(vencimientoDate.getTime()) ? vencimientoDate.toISOString() : null,

@@ -25,6 +25,7 @@ export interface Tote {
   // Campos nuevos basados en el contexto de RFID y negocio
   producto?: string;
   clienteId?: string | null;
+  operadorId?: string | null;
   lote?: string;
   fechaEnvasado?: string | null;
   fechaVencimiento?: string | null;
@@ -43,6 +44,7 @@ export const toteFormSchema = z.object({
   // Nuevos campos en el formulario
   producto: z.string().optional().nullable(),
   clienteId: z.string().optional().nullable(),
+  operadorId: z.string().optional().nullable(),
   lote: z.string().optional().nullable(),
   fechaEnvasado: z.string().optional().nullable(),
   fechaVencimiento: z.string().optional().nullable(),
