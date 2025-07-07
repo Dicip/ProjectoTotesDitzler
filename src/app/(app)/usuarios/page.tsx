@@ -198,7 +198,7 @@ export default function UsuariosPage() {
           email: data.email || undefined,
           role: data.role,
           status: data.status,
-          password: data.password,
+          password: data.password as string,
           avatar: `https://placehold.co/40x40.png?text=${data.name.substring(0,1)}`,
           createdAt: new Date().toISOString(),
           registeredBy: 'Admin Panel',
@@ -229,7 +229,12 @@ export default function UsuariosPage() {
   };
   
   const sortedUsers = React.useMemo(() => {
-    return [...users].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return [...users]
+        .filter(u => u) // Filter out any null/undefined users
+        .sort((a, b) => {
+            if (!a.createdAt || !b.createdAt) return 0;
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
   }, [users]);
 
 
@@ -304,7 +309,7 @@ export default function UsuariosPage() {
                         {statusTranslations[user.status]}
                       </Badge>
                     </TableCell>
-                    <TableCell>{format(parseISO(user.createdAt), 'P', { locale: es })}</TableCell>
+                    <TableCell>{user.createdAt ? format(parseISO(user.createdAt), 'P', { locale: es }) : "-"}</TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -483,3 +488,5 @@ export default function UsuariosPage() {
     </div>
   );
 }
+
+    
