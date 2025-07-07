@@ -8,7 +8,7 @@ import * as z from "zod";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation"; // Aunque la redirección principal es desde el server action
-import { LogIn, AlertCircle } from "lucide-react";
+import { LogIn, AlertCircle, Sun, Moon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,7 @@ import {
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { loginUser } from "./actions";
+import { useTheme } from "@/components/theme-provider";
 
 const loginClientSchema = z.object({
   email: z.string().min(1, { message: "El email/usuario es obligatorio." })
@@ -42,6 +43,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
+  const { toggleTheme } = useTheme();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginClientSchema),
@@ -90,6 +92,20 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen">
+      <div className="absolute top-4 right-4 z-20">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleTheme}
+          aria-label="Toggle theme"
+          className="text-white hover:bg-white/20 hover:text-white"
+        >
+          <Sun className="h-6 w-6 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+          <Moon className="absolute h-6 w-6 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          <span className="sr-only">Toggle theme</span>
+        </Button>
+      </div>
+
       <div className="absolute inset-0 z-[-1]">
         <Image 
           src="/img/fondo.jpg"
