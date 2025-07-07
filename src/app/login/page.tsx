@@ -26,14 +26,7 @@ import { loginUser } from "./actions";
 import { useTheme } from "@/components/theme-provider";
 
 const loginClientSchema = z.object({
-  email: z.string().min(1, { message: "El email/usuario es obligatorio." })
-    .refine(value => {
-      const lowerValue = value.toLowerCase();
-      if (lowerValue === 'adm') return true; // Aceptar "adm"
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value); // Validar email si no es "adm"
-    }, {
-      message: "Por favor, ingrese un email válido o 'adm'.",
-    }),
+  username: z.string().min(1, { message: "El nombre de usuario es obligatorio." }),
   password: z.string().min(1, { message: "La contraseña es obligatoria." }),
 });
 
@@ -48,7 +41,7 @@ export default function LoginPage() {
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginClientSchema),
     defaultValues: {
-      email: "",
+      username: "",
       password: "",
     },
   });
@@ -147,12 +140,12 @@ export default function LoginPage() {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="email"
+                  name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email o Usuario</FormLabel>
+                      <FormLabel>Nombre de Usuario</FormLabel>
                       <FormControl>
-                        <Input type="text" placeholder="su@email.com o adm" {...field} />
+                        <Input type="text" placeholder="ej: amartinez, adm" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -10,20 +10,14 @@ import { mockUsers } from "@/data/mock-data";
 // Esta interfaz define la estructura de los datos del usuario que guardamos en la sesión.
 export interface UserSessionData {
   userId: string | number;
-  email: string;
+  username: string;
+  email?: string;
   nombre: string;
   rol: string;
 }
 
 const loginFormSchema = z.object({
-  email: z.string().min(1, { message: "El email/usuario es obligatorio." })
-    .refine(value => {
-      const lowerValue = value.toLowerCase();
-      if (lowerValue === 'adm') return true;
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-    }, {
-      message: "Por favor, ingrese un email válido o 'adm'.",
-    }),
+  username: z.string().min(1, { message: "El nombre de usuario es obligatorio." }),
   password: z.string().min(1, { message: "La contraseña es obligatoria." }),
 });
 
@@ -47,14 +41,15 @@ export async function loginUser(credentials: LoginFormValues): Promise<LoginResu
     return { success: false, error: `Datos de entrada inválidos: ${errorMessages}` };
   }
 
-  const { email, password } = validation.data;
+  const { username, password } = validation.data;
 
   let sessionData: UserSessionData | null = null;
 
   // --- Hardcoded Admin Check (always available) ---
-  if (email.toLowerCase() === 'adm' && password === '123') {
+  if (username.toLowerCase() === 'adm' && password === '123') {
     sessionData = {
         userId: 'adm_user',
+        username: 'adm',
         email: 'adm@dicipware.com',
         nombre: 'Administrador del Sistema',
         rol: 'Admin',
@@ -63,22 +58,23 @@ export async function loginUser(credentials: LoginFormValues): Promise<LoginResu
   } else {
     // --- DEMO MODE USER CHECK ---
     console.log("[DEMO_MODE] Attempting mock user login.");
-    const mockUser = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const mockUser = mockUsers.find(u => u.username.toLowerCase() === username.toLowerCase());
     
     if (mockUser && mockUser.password === password && mockUser.status === 'Active') {
         sessionData = {
             userId: mockUser.id,
+            username: mockUser.username,
             email: mockUser.email,
             nombre: mockUser.name,
             rol: mockUser.role,
         };
-        console.log(`[DEMO_MODE] Mock user ${mockUser.email} authenticated successfully.`);
+        console.log(`[DEMO_MODE] Mock user ${mockUser.username} authenticated successfully.`);
     }
   }
 
   if (sessionData) {
     const sessionValue = JSON.stringify(sessionData);
-    console.log(`[LoginAction] Setting auth cookie for '${sessionData.email}' with value: ${sessionValue}`);
+    console.log(`[LoginAction] Setting auth cookie for '${sessionData.username}' with value: ${sessionValue}`);
     cookies().set(AUTH_COOKIE_NAME, sessionValue, {
         httpOnly: true,
         path: '/',

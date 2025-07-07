@@ -12,9 +12,9 @@ export async function fetchUsers(): Promise<User[]> {
 export async function addUser(userData: UserFormData): Promise<{ success: boolean; error?: string; user?: User }> {
   console.log("[DEMO_MODE] Simulating addUser.", userData);
   
-  const existingUser = mockUsers.find(u => u.email.toLowerCase() === userData.email.toLowerCase());
+  const existingUser = mockUsers.find(u => u.username.toLowerCase() === userData.username.toLowerCase());
   if (existingUser) {
-    return { success: false, error: "Ya existe un usuario con este email." };
+    return { success: false, error: "Ya existe un usuario con este nombre de usuario." };
   }
 
   if (!userData.password) {
@@ -24,7 +24,8 @@ export async function addUser(userData: UserFormData): Promise<{ success: boolea
   const newUser: User = {
     id: `usr_${new Date().getTime()}`,
     name: userData.name,
-    email: userData.email,
+    username: userData.username,
+    email: userData.email || undefined,
     password: userData.password,
     role: userData.role,
     status: userData.status,
@@ -47,20 +48,15 @@ export async function updateUser(userId: string, userData: UserFormData): Promis
 
   const originalUser = mockUsers[userIndex];
 
-  // Ensure email uniqueness if it's being changed
-  if (userData.email.toLowerCase() !== originalUser.email.toLowerCase()) {
-    const existingUser = mockUsers.find(u => u.email.toLowerCase() === userData.email.toLowerCase() && u.id !== userId);
-    if (existingUser) {
-      return { success: false, error: "Ya existe otro usuario con este email." };
-    }
-  }
+  // Username cannot be changed, so no need to check for uniqueness on update.
 
   const updatedUser: User = {
     ...originalUser,
     name: userData.name,
-    email: userData.email,
+    email: userData.email || undefined,
     role: userData.role,
     status: userData.status,
+    // Keep original password if new one is not provided
     password: userData.password ? userData.password : originalUser.password,
   };
   

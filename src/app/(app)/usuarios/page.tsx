@@ -100,6 +100,7 @@ export default function UsuariosPage() {
     resolver: zodResolver(userFormSchema), 
     defaultValues: {
       name: "",
+      username: "",
       email: "",
       role: "Viewer",
       status: "Active",
@@ -112,14 +113,15 @@ export default function UsuariosPage() {
     if (editingUser) {
       form.reset({
         name: editingUser.name,
-        email: editingUser.email,
+        username: editingUser.username,
+        email: editingUser.email || "",
         role: editingUser.role,
         status: editingUser.status,
         password: "",
         confirmPassword: "",
       });
     } else {
-      form.reset({ name: "", email: "", role: "Viewer", status: "Active", password: "", confirmPassword: "" });
+      form.reset({ name: "", username: "", email: "", role: "Viewer", status: "Active", password: "", confirmPassword: "" });
     }
   }, [editingUser, form, isAddOrEditUserDialogOpen]);
 
@@ -148,16 +150,17 @@ export default function UsuariosPage() {
     try {
       if (editingUser) {
         // Update existing user
-        if (data.email.toLowerCase() !== editingUser.email.toLowerCase()) {
-          const existingUser = users.find(u => u.email.toLowerCase() === data.email.toLowerCase() && u.id !== editingUser.id);
+        if (data.username.toLowerCase() !== editingUser.username.toLowerCase()) {
+          const existingUser = users.find(u => u.username.toLowerCase() === data.username.toLowerCase() && u.id !== editingUser.id);
           if (existingUser) {
-            throw new Error("Ya existe otro usuario con este email.");
+            throw new Error("Ya existe otro usuario con este nombre de usuario.");
           }
         }
         const updatedUser: User = { 
           ...editingUser, 
           name: data.name,
-          email: data.email,
+          username: data.username,
+          email: data.email || undefined,
           role: data.role,
           status: data.status,
           password: data.password ? data.password : editingUser.password, 
@@ -167,14 +170,15 @@ export default function UsuariosPage() {
 
       } else {
         // Add new user
-        const existingUser = users.find(u => u.email.toLowerCase() === data.email.toLowerCase());
+        const existingUser = users.find(u => u.username.toLowerCase() === data.username.toLowerCase());
         if (existingUser) {
-          throw new Error("Ya existe un usuario con este email.");
+          throw new Error("Ya existe un usuario con este nombre de usuario.");
         }
         const newUser: User = {
           id: `usr_${new Date().getTime()}`,
           name: data.name,
-          email: data.email,
+          username: data.username,
+          email: data.email || undefined,
           role: data.role,
           status: data.status,
           password: data.password,
@@ -250,11 +254,11 @@ export default function UsuariosPage() {
               <TableRow>
                 <TableHead className="w-[80px]">Avatar</TableHead>
                 <TableHead>Nombre</TableHead>
+                <TableHead>Usuario</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Rol</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead>Fecha Creación</TableHead>
-                <TableHead>Registrado Por</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -275,7 +279,8 @@ export default function UsuariosPage() {
                       </Avatar>
                     </TableCell>
                     <TableCell className="font-medium">{user.name}</TableCell>
-                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{user.username}</TableCell>
+                    <TableCell>{user.email || "-"}</TableCell>
                     <TableCell>{roleTranslations[user.role]}</TableCell>
                     <TableCell>
                       <Badge variant={user.status === "Active" ? "default" : "secondary"}>
@@ -283,7 +288,6 @@ export default function UsuariosPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>{format(parseISO(user.createdAt), 'P', { locale: es })}</TableCell>
-                    <TableCell>{user.registeredBy}</TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -327,9 +331,22 @@ export default function UsuariosPage() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nombre</FormLabel>
+                    <FormLabel>Nombre Completo</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nombre completo" {...field} />
+                      <Input placeholder="Nombre y Apellido" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nombre de Usuario</FormLabel>
+                    <FormControl>
+                      <Input placeholder="ej: jdoe" {...field} disabled={!!editingUser} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -340,7 +357,7 @@ export default function UsuariosPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>Email (Opcional)</FormLabel>
                     <FormControl>
                       <Input type="email" placeholder="correo@ejemplo.com" {...field} />
                     </FormControl>
