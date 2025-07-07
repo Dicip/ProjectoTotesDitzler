@@ -67,10 +67,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { useLocalStorage } from "@/hooks/use-local-storage";
-import { mockUsers, mockTotes } from "@/data/mock-data";
+import { mockUsers } from "@/data/mock-data";
 import type { User, UserFormData } from "./schema"; 
 import { userFormSchema } from "./schema"; 
-import type { Tote } from "../totes/schema";
 
 
 const roleTranslations: Record<User["role"], string> = {
@@ -87,7 +86,6 @@ const statusTranslations: Record<User["status"], string> = {
 export default function UsuariosPage() {
   const [isClient, setIsClient] = React.useState(false);
   const [users, setUsers] = useLocalStorage<User[]>("dicipware_users", mockUsers);
-  const [totes, setTotes] = useLocalStorage<Tote[]>("dicipware_totes", mockTotes);
   const [isAddOrEditUserDialogOpen, setIsAddOrEditUserDialogOpen] = React.useState(false);
   const [editingUser, setEditingUser] = React.useState<User | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
@@ -102,7 +100,6 @@ export default function UsuariosPage() {
     resolver: zodResolver(userFormSchema), 
     defaultValues: {
       name: "",
-      username: "",
       email: "",
       role: "Viewer",
       status: "Active",
@@ -110,20 +107,26 @@ export default function UsuariosPage() {
       confirmPassword: "",
     },
   });
+  
+  const sortedUsers = React.useMemo(() => {
+    return [...users]
+        .filter(u => u && u.id && u.name && u.email && u.role && u.status && u.createdAt)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [users]);
+
 
   React.useEffect(() => {
     if (editingUser) {
       form.reset({
         name: editingUser.name,
-        username: editingUser.username,
-        email: editingUser.email || "",
+        email: editingUser.email,
         role: editingUser.role,
         status: editingUser.status,
         password: "",
         confirmPassword: "",
       });
     } else {
-      form.reset({ name: "", username: "", email: "", role: "Viewer", status: "Active", password: "", confirmPassword: "" });
+      form.reset({ name: "", email: "", role: "Viewer", status: "Active", password: "", confirmPassword: "" });
     }
   }, [editingUser, form, isAddOrEditUserDialogOpen]);
 
@@ -152,50 +155,35 @@ export default function UsuariosPage() {
     try {
       if (editingUser) {
         // Update existing user
-        if (data.username.toLowerCase() !== editingUser.username.toLowerCase()) {
-          const existingUser = users.find(u => u.username.toLowerCase() === data.username.toLowerCase() && u.id !== editingUser.id);
+        if (data.email.toLowerCase() !== editingUser.email.toLowerCase()) {
+          const existingUser = users.find(u => u.email.toLowerCase() === data.email.toLowerCase() && u.id !== editingUser.id);
           if (existingUser) {
-            throw new Error("Ya existe otro usuario con este nombre de usuario.");
+            throw new Error("Ya existe otro usuario con este email.");
           }
         }
         
-        const oldId = editingUser.id;
         const updatedUser: User = { 
           ...editingUser,
-          id: `usr_${data.username.toLowerCase()}`, // Recalculate ID from new username
           name: data.name,
-          username: data.username,
-          email: data.email || undefined,
+          email: data.email,
           role: data.role,
           status: data.status,
           password: data.password ? data.password : editingUser.password, 
         };
-        const newId = updatedUser.id;
 
-        setUsers(users.map((u) => (u.id === oldId ? updatedUser : u)));
-        
-        // If the user ID changed, we need to update any totes assigned to them
-        if (oldId !== newId) {
-            setTotes(currentTotes => 
-                currentTotes.map(tote => 
-                    tote.operadorId === oldId ? { ...tote, operadorId: newId } : tote
-                )
-            );
-        }
-
+        setUsers(users.map((u) => (u.id === editingUser.id ? updatedUser : u)));
         toast({ title: "Usuario actualizado", description: `El usuario ${data.name} ha sido actualizado.` });
 
       } else {
         // Add new user
-        const existingUser = users.find(u => u.username.toLowerCase() === data.username.toLowerCase());
+        const existingUser = users.find(u => u.email.toLowerCase() === data.email.toLowerCase());
         if (existingUser) {
-          throw new Error("Ya existe un usuario con este nombre de usuario.");
+          throw new Error("Ya existe un usuario con este email.");
         }
         const newUser: User = {
-          id: `usr_${data.username.toLowerCase()}`,
+          id: `usr_${new Date().getTime()}`,
           name: data.name,
-          username: data.username,
-          email: data.email || undefined,
+          email: data.email,
           role: data.role,
           status: data.status,
           password: data.password as string,
@@ -227,20 +215,6 @@ export default function UsuariosPage() {
       }
     }
   };
-  
-  const sortedUsers = React.useMemo(() => {
-    if (!Array.isArray(users)) {
-        return []; // Guard against non-array state
-    }
-    return [...users]
-        // This is a very defensive filter. It ensures every object is a valid User-like object before proceeding.
-        .filter(u => u && u.id && u.name && u.username && u.role && u.status && u.createdAt)
-        .sort((a, b) => {
-            // Because of the filter above, we can be confident a.createdAt and b.createdAt exist.
-            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        });
-  }, [users]);
-
 
   if (!isClient) {
     return (
@@ -280,7 +254,6 @@ export default function UsuariosPage() {
               <TableRow>
                 <TableHead className="w-[80px]">Avatar</TableHead>
                 <TableHead>Nombre</TableHead>
-                <TableHead>Usuario</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Rol</TableHead>
                 <TableHead>Estado</TableHead>
@@ -291,7 +264,7 @@ export default function UsuariosPage() {
             <TableBody>
               {users.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="h-24 text-center">
+                  <TableCell colSpan={7} className="h-24 text-center">
                     No hay usuarios para mostrar.
                   </TableCell>
                 </TableRow>
@@ -305,8 +278,7 @@ export default function UsuariosPage() {
                       </Avatar>
                     </TableCell>
                     <TableCell className="font-medium">{user.name}</TableCell>
-                    <TableCell>{user.username}</TableCell>
-                    <TableCell>{user.email || "-"}</TableCell>
+                    <TableCell>{user.email}</TableCell>
                     <TableCell>{roleTranslations[user.role]}</TableCell>
                     <TableCell>
                       <Badge variant={user.status === "Active" ? "default" : "secondary"}>
@@ -365,25 +337,12 @@ export default function UsuariosPage() {
                   </FormItem>
                 )}
               />
-               <FormField
-                control={form.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nombre de Usuario</FormLabel>
-                    <FormControl>
-                      <Input placeholder="ej: jdoe" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email (Opcional)</FormLabel>
+                    <FormLabel>Email</FormLabel>
                     <FormControl>
                       <Input type="email" placeholder="correo@ejemplo.com" {...field} />
                     </FormControl>

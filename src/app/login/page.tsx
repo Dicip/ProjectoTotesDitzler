@@ -26,7 +26,7 @@ import { loginUser } from "./actions";
 import { useTheme } from "@/components/theme-provider";
 
 const loginClientSchema = z.object({
-  username: z.string().min(1, { message: "El nombre de usuario es obligatorio." }),
+  email: z.string().min(1, { message: "El email o usuario es obligatorio." }),
   password: z.string().min(1, { message: "La contraseña es obligatoria." }),
 });
 
@@ -41,7 +41,7 @@ export default function LoginPage() {
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginClientSchema),
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
     },
   });
@@ -140,12 +140,12 @@ export default function LoginPage() {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="username"
+                  name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nombre de Usuario</FormLabel>
+                      <FormLabel>Email o Usuario</FormLabel>
                       <FormControl>
-                        <Input type="text" placeholder="ej: amartinez, adm" {...field} />
+                        <Input type="text" placeholder="ej: ana.martinez@example.com, adm" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -11,11 +11,11 @@ import { subDays, format, isBefore, parseISO, startOfDay, addDays, differenceInD
 // =================================================================
 
 export const mockUsers: User[] = [
-  { id: 'usr_amartinez', username: 'amartinez', name: 'Ana Martínez', email: 'ana.martinez@example.com', password: '123', role: 'Admin', status: 'Active', avatar: 'https://placehold.co/40x40.png?text=AM', createdAt: subDays(new Date(), 2).toISOString(), registeredBy: 'Admin Panel' },
-  { id: 'usr_cgomez', username: 'cgomez', name: 'Carlos Gómez', email: 'carlos.gomez@example.com', password: '123', role: 'Editor', status: 'Active', avatar: 'https://placehold.co/40x40.png?text=CG', createdAt: subDays(new Date(), 10).toISOString(), registeredBy: 'Admin Panel' },
-  { id: 'usr_lfernandez', username: 'lfernandez', name: 'Lucía Fernández', email: '', password: '123', role: 'Viewer', status: 'Inactive', avatar: 'https://placehold.co/40x40.png?text=LF', createdAt: subDays(new Date(), 25).toISOString(), registeredBy: 'API' },
-  { id: 'usr_jdiaz', username: 'jdiaz', name: 'Jorge Díaz', email: 'jorge.diaz@example.com', password: '123', role: 'Viewer', status: 'Active', avatar: 'https://placehold.co/40x40.png?text=JD', createdAt: subDays(new Date(), 40).toISOString(), registeredBy: 'Admin Panel' },
-  { id: 'usr_mbose', username: 'mbose', name: 'Miguel Bosé', email: '', password: '123', role: 'Editor', status: 'Active', avatar: 'https://placehold.co/40x40.png?text=MB', createdAt: subDays(new Date(), 5).toISOString(), registeredBy: 'API' },
+  { id: 'usr_amartinez', name: 'Ana Martínez', email: 'ana.martinez@example.com', password: '123', role: 'Admin', status: 'Active', avatar: 'https://placehold.co/40x40.png?text=AM', createdAt: subDays(new Date(), 2).toISOString(), registeredBy: 'Admin Panel' },
+  { id: 'usr_cgomez', name: 'Carlos Gómez', email: 'carlos.gomez@example.com', password: '123', role: 'Editor', status: 'Active', avatar: 'https://placehold.co/40x40.png?text=CG', createdAt: subDays(new Date(), 10).toISOString(), registeredBy: 'Admin Panel' },
+  { id: 'usr_lfernandez', name: 'Lucía Fernández', email: 'lucia.fernandez@example.com', password: '123', role: 'Viewer', status: 'Inactive', avatar: 'https://placehold.co/40x40.png?text=LF', createdAt: subDays(new Date(), 25).toISOString(), registeredBy: 'API' },
+  { id: 'usr_jdiaz', name: 'Jorge Díaz', email: 'jorge.diaz@example.com', password: '123', role: 'Viewer', status: 'Active', avatar: 'https://placehold.co/40x40.png?text=JD', createdAt: subDays(new Date(), 40).toISOString(), registeredBy: 'Admin Panel' },
+  { id: 'usr_mbose', name: 'Miguel Bosé', email: 'miguel.bose@example.com', password: '123', role: 'Editor', status: 'Active', avatar: 'https://placehold.co/40x40.png?text=MB', createdAt: subDays(new Date(), 5).toISOString(), registeredBy: 'API' },
 ];
 
 

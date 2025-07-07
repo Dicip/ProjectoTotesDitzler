@@ -130,10 +130,7 @@ export default function PerfilPage() {
               <AvatarFallback>{session.nombre.substring(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
             <h2 className="text-2xl font-bold">{session.nombre}</h2>
-            <p className="text-muted-foreground">@{session.username}</p>
-             {session.email && (
-                <p className="text-xs text-muted-foreground/80 mt-1">{session.email}</p>
-            )}
+            <p className="text-muted-foreground">{session.email}</p>
           </CardHeader>
           <CardContent className="text-sm">
              <div className="flex items-center gap-3 p-3 rounded-md bg-muted/50">

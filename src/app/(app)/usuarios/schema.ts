@@ -1,10 +1,10 @@
+
 import { z } from "zod";
 
 export interface User {
   id: string;
-  username: string;
   name: string;
-  email?: string;
+  email: string;
   password?: string;
   role: "Admin" | "Editor" | "Viewer";
   status: "Active" | "Inactive";
@@ -15,8 +15,7 @@ export interface User {
 
 export const userFormSchema = z.object({
   name: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres." }),
-  username: z.string().min(3, { message: "El nombre de usuario debe tener al menos 3 caracteres." }).regex(/^[a-zA-Z0-9_.-]+$/, { message: "Solo letras, números, puntos, guiones y guiones bajos." }),
-  email: z.string().email({ message: "Por favor, ingrese un email válido." }).optional().or(z.literal('')),
+  email: z.string().email({ message: "Por favor, ingrese un email válido." }),
   role: z.enum(["Admin", "Editor", "Viewer"]),
   status: z.enum(["Active", "Inactive"]),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres.").optional().or(z.literal('')),

@@ -12,9 +12,9 @@ export async function fetchUsers(): Promise<User[]> {
 export async function addUser(userData: UserFormData): Promise<{ success: boolean; error?: string; user?: User }> {
   console.log("[DEMO_MODE] Simulating addUser.", userData);
   
-  const existingUser = mockUsers.find(u => u.username.toLowerCase() === userData.username.toLowerCase());
+  const existingUser = mockUsers.find(u => u.email.toLowerCase() === userData.email.toLowerCase());
   if (existingUser) {
-    return { success: false, error: "Ya existe un usuario con este nombre de usuario." };
+    return { success: false, error: "Ya existe un usuario con este email." };
   }
 
   if (!userData.password) {
@@ -22,10 +22,9 @@ export async function addUser(userData: UserFormData): Promise<{ success: boolea
   }
 
   const newUser: User = {
-    id: `usr_${userData.username.toLowerCase()}`,
+    id: `usr_${new Date().getTime()}`,
     name: userData.name,
-    username: userData.username,
-    email: userData.email || undefined,
+    email: userData.email,
     password: userData.password,
     role: userData.role,
     status: userData.status,
@@ -48,20 +47,18 @@ export async function updateUser(userId: string, userData: UserFormData): Promis
 
   const originalUser = mockUsers[userIndex];
 
-  // Check for username uniqueness if it has been changed
-  if (userData.username.toLowerCase() !== originalUser.username.toLowerCase()) {
-    const existingUser = mockUsers.find(u => u.username.toLowerCase() === userData.username.toLowerCase() && u.id !== userId);
+  // Check for email uniqueness if it has been changed
+  if (userData.email.toLowerCase() !== originalUser.email.toLowerCase()) {
+    const existingUser = mockUsers.find(u => u.email.toLowerCase() === userData.email.toLowerCase() && u.id !== userId);
     if (existingUser) {
-      return { success: false, error: "Ya existe otro usuario con este nombre de usuario." };
+      return { success: false, error: "Ya existe otro usuario con este email." };
     }
   }
 
   const updatedUser: User = {
     ...originalUser,
-    id: `usr_${userData.username.toLowerCase()}`, // Recalculate ID
     name: userData.name,
-    username: userData.username,
-    email: userData.email || undefined,
+    email: userData.email,
     role: userData.role,
     status: userData.status,
     // Keep original password if new one is not provided
