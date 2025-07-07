@@ -48,11 +48,18 @@ export async function updateUser(userId: string, userData: UserFormData): Promis
 
   const originalUser = mockUsers[userIndex];
 
-  // Username cannot be changed, so no need to check for uniqueness on update.
+  // Check for username uniqueness if it has been changed
+  if (userData.username.toLowerCase() !== originalUser.username.toLowerCase()) {
+    const existingUser = mockUsers.find(u => u.username.toLowerCase() === userData.username.toLowerCase() && u.id !== userId);
+    if (existingUser) {
+      return { success: false, error: "Ya existe otro usuario con este nombre de usuario." };
+    }
+  }
 
   const updatedUser: User = {
     ...originalUser,
     name: userData.name,
+    username: userData.username,
     email: userData.email || undefined,
     role: userData.role,
     status: userData.status,

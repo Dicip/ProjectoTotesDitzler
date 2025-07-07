@@ -346,7 +346,7 @@ export default function UsuariosPage() {
                   <FormItem>
                     <FormLabel>Nombre de Usuario</FormLabel>
                     <FormControl>
-                      <Input placeholder="ej: jdoe" {...field} disabled={!!editingUser} />
+                      <Input placeholder="ej: jdoe" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
