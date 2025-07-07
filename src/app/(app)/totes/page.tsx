@@ -95,6 +95,28 @@ export default function TotesPage() {
     },
   });
 
+  const watchedStatus = form.watch("estadoActual");
+
+  React.useEffect(() => {
+    const productForbiddenStates: (typeof TOTE_ESTADOS)[number][] = ["Disponible", "En Lavado", "En Mantenimiento", "De Baja"];
+    if (productForbiddenStates.includes(watchedStatus)) {
+        form.setValue("producto", "");
+        form.setValue("lote", "");
+        form.setValue("fechaEnvasado", null);
+        form.setValue("fechaVencimiento", null);
+    }
+
+    if (watchedStatus !== "Con Cliente") {
+        form.setValue("clienteId", null);
+        if (form.getValues("ubicacion") === "Cliente") {
+            form.setValue("ubicacion", "Patio de recepción");
+        }
+    } else {
+        form.setValue("ubicacion", "Cliente");
+    }
+  }, [watchedStatus, form]);
+
+
   React.useEffect(() => {
     if (!isEditToteDialogOpen) {
       setEditingTote(null);
@@ -165,7 +187,7 @@ export default function TotesPage() {
       handleOpenEditToteDialog(found);
     } else {
       toast({ title: "Tote No Encontrado", description: "Puede registrar los detalles para el nuevo tote." });
-      form.reset({ // Pre-fill the form for a new tote
+      form.reset({ 
         codigoIdentificacion: code,
         tipoMaterial: "Plástico HDPE",
         capacidad: 1000,
@@ -180,7 +202,7 @@ export default function TotesPage() {
         fechaVencimiento: null,
         notas: "",
       });
-      setEditingTote(null); // Set to add mode
+      setEditingTote(null);
       setIsEditToteDialogOpen(true);
     }
   };
@@ -188,7 +210,7 @@ export default function TotesPage() {
 
   const onSubmit = async (data: ToteFormData) => {
     try {
-        if (editingTote) { // Update logic
+        if (editingTote) { 
             let fechaDespacho = editingTote.fechaDespacho;
             if (data.estadoActual === 'Con Cliente' && editingTote.estadoActual !== 'Con Cliente') {
                 fechaDespacho = startOfDay(new Date()).toISOString();
@@ -209,7 +231,7 @@ export default function TotesPage() {
             
             setTotes(totes.map((t) => (t.id === updatedTote.id ? updatedTote : t)));
             toast({ title: "Tote actualizado", description: `El tote ${updatedTote.codigoIdentificacion} ha sido actualizado.` });
-        } else { // Add logic
+        } else { 
             const codeExists = totes.some(t => t.codigoIdentificacion.toLowerCase() === data.codigoIdentificacion.toLowerCase());
             if (codeExists) {
                 throw new Error("Ya existe un tote con este código de identificación.");
@@ -313,6 +335,16 @@ export default function TotesPage() {
       </div>
     );
   }
+  
+  const isProductInfoDisabled = React.useMemo(() => {
+    const productForbiddenStates: (typeof TOTE_ESTADOS)[number][] = ["Disponible", "En Lavado", "En Mantenimiento", "De Baja"];
+    return productForbiddenStates.includes(watchedStatus);
+  }, [watchedStatus]);
+
+  const isClientInfoDisabled = React.useMemo(() => {
+      return watchedStatus !== "Con Cliente";
+  }, [watchedStatus]);
+
 
   return (
     <div className="p-4 md:p-6 space-y-6">
@@ -508,68 +540,18 @@ export default function TotesPage() {
               <FormField control={form.control} name="capacidad" render={({ field }) => ( <FormItem><FormLabel>Capacidad</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="unidadCapacidad" render={({ field }) => ( <FormItem><FormLabel>Unidad</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="Litros">Litros</SelectItem><SelectItem value="Kg">Kg</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="estadoActual" render={({ field }) => ( <FormItem><FormLabel>Estado</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{TOTE_ESTADOS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="ubicacion" render={({ field }) => ( <FormItem><FormLabel>Ubicación</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{TOTE_UBICACIONES.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-              <FormField
-                control={form.control}
-                name="clienteId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cliente Asignado</FormLabel>
-                    <Select
-                      onValueChange={(value) => field.onChange(value === "null" ? null : value)}
-                      value={field.value ?? "null"}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Ninguno" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="null">Ninguno</SelectItem>
-                        {clientes.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.nombreEmpresa}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
-                control={form.control}
-                name="operadorId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Operador a Cargo</FormLabel>
-                    <Select
-                      onValueChange={(value) => field.onChange(value === "null" ? null : value)}
-                      value={field.value ?? "null"}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Ninguno" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="null">Ninguno</SelectItem>
-                        {users.map((u) => (
-                          <SelectItem key={u.id} value={u.id}>
-                            {u.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField control={form.control} name="producto" render={({ field }) => ( <FormItem><FormLabel>Producto</FormLabel><FormControl><Input {...field} value={field.value || ''} placeholder="Ej: Pulpa de Frutilla" /></FormControl><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="lote" render={({ field }) => ( <FormItem><FormLabel>Lote</FormLabel><FormControl><Input {...field} value={field.value || ''} placeholder="Ej: L-202405A" /></FormControl><FormMessage /></FormItem> )} />
               
-              <FormField control={form.control} name="fechaEnvasado" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha de Envasado</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(parseISO(field.value), "PPP", { locale: es }) : <span>Seleccione fecha</span>}<CalendarLucideIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value ? parseISO(field.value) : undefined} onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="fechaVencimiento" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha de Vencimiento</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(parseISO(field.value), "PPP", { locale: es }) : <span>Seleccione fecha</span>}<CalendarLucideIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value ? parseISO(field.value) : undefined} onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="ubicacion" render={({ field }) => ( <FormItem><FormLabel>Ubicación</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={watchedStatus === 'Con Cliente'}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{TOTE_UBICACIONES.map(u => <SelectItem key={u} value={u} disabled={u === 'Cliente' && watchedStatus !== 'Con Cliente'}>{u}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+              
+              <FormField control={form.control} name="clienteId" render={({ field }) => ( <FormItem><FormLabel>Cliente Asignado</FormLabel><Select onValueChange={(value) => field.onChange(value === "null" ? null : value)} value={field.value ?? "null"} disabled={isClientInfoDisabled}><FormControl><SelectTrigger><SelectValue placeholder="Ninguno" /></SelectTrigger></FormControl><SelectContent><SelectItem value="null">Ninguno</SelectItem>{clientes.map((c) => (<SelectItem key={c.id} value={c.id}>{c.nombreEmpresa}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem> )} />
+              
+              <FormField control={form.control} name="operadorId" render={({ field }) => ( <FormItem><FormLabel>Operador a Cargo</FormLabel><Select onValueChange={(value) => field.onChange(value === "null" ? null : value)} value={field.value ?? "null"}><FormControl><SelectTrigger><SelectValue placeholder="Ninguno" /></SelectTrigger></FormControl><SelectContent><SelectItem value="null">Ninguno</SelectItem>{users.map((u) => (<SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem> )} />
+              
+              <FormField control={form.control} name="producto" render={({ field }) => ( <FormItem><FormLabel>Producto</FormLabel><FormControl><Input {...field} value={field.value || ''} placeholder="Ej: Pulpa de Frutilla" disabled={isProductInfoDisabled} /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="lote" render={({ field }) => ( <FormItem><FormLabel>Lote</FormLabel><FormControl><Input {...field} value={field.value || ''} placeholder="Ej: L-202405A" disabled={isProductInfoDisabled} /></FormControl><FormMessage /></FormItem> )} />
+              
+              <FormField control={form.control} name="fechaEnvasado" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha de Envasado</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")} disabled={isProductInfoDisabled}>{field.value ? format(parseISO(field.value), "PPP", { locale: es }) : <span>Seleccione fecha</span>}<CalendarLucideIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value ? parseISO(field.value) : undefined} onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="fechaVencimiento" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha de Vencimiento</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")} disabled={isProductInfoDisabled}>{field.value ? format(parseISO(field.value), "PPP", { locale: es }) : <span>Seleccione fecha</span>}<CalendarLucideIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value ? parseISO(field.value) : undefined} onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem> )} />
               
               <FormField control={form.control} name="notas" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Notas</FormLabel><FormControl><Textarea {...field} value={field.value || ''} placeholder="Anotaciones adicionales sobre el tote..."/></FormControl><FormMessage /></FormItem> )} />
               

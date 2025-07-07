@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-// Definición de ubicaciones y estados más detallados según el contexto de negocio.
 export const TOTE_ESTADOS = ["Disponible", "En Uso", "En Lavado", "En Mantenimiento", "De Baja", "Con Cliente"] as const;
 export const TOTE_UBICACIONES = [
   "Antecámara Planta",
@@ -15,21 +14,20 @@ export const TOTE_UBICACIONES = [
 
 export interface Tote {
   id: string; 
-  codigoIdentificacion: string; // ID de RFID
+  codigoIdentificacion: string; 
   tipoMaterial: "Plástico HDPE" | "Acero Inoxidable" | "Otro";
   capacidad: number; 
   unidadCapacidad: "Litros" | "Kg";
   estadoActual: (typeof TOTE_ESTADOS)[number];
   ubicacion: (typeof TOTE_UBICACIONES)[number];
   fechaAdquisicion: string;
-  // Campos nuevos basados en el contexto de RFID y negocio
   producto?: string;
   clienteId?: string | null;
   operadorId?: string | null;
   lote?: string;
   fechaEnvasado?: string | null;
   fechaVencimiento?: string | null;
-  fechaDespacho?: string | null; // Fecha en que el estado cambia a "Con Cliente"
+  fechaDespacho?: string | null;
   notas?: string;
 }
 
@@ -41,7 +39,6 @@ export const toteFormSchema = z.object({
   estadoActual: z.enum(TOTE_ESTADOS, { required_error: "Debe seleccionar un estado." }),
   ubicacion: z.enum(TOTE_UBICACIONES, { required_error: "Debe seleccionar una ubicación." }),
   
-  // Nuevos campos en el formulario
   producto: z.string().optional().nullable(),
   clienteId: z.string().optional().nullable(),
   operadorId: z.string().optional().nullable(),
@@ -49,15 +46,58 @@ export const toteFormSchema = z.object({
   fechaEnvasado: z.string().optional().nullable(),
   fechaVencimiento: z.string().optional().nullable(),
   notas: z.string().optional().nullable(),
-}).refine(data => {
-    // Si el estado es "Con Cliente", la ubicación debe ser "Cliente" y debe tener un clienteId asignado.
-    if (data.estadoActual === "Con Cliente") {
-        return data.ubicacion === "Cliente" && !!data.clienteId;
+}).superRefine((data, ctx) => {
+    const isProductFilled = !!data.producto || !!data.lote || !!data.fechaEnvasado || !!data.fechaVencimiento;
+    const productRequiredStates: (typeof TOTE_ESTADOS)[number][] = ["Con Cliente", "En Uso"];
+    const productForbiddenStates: (typeof TOTE_ESTADOS)[number][] = ["Disponible", "En Lavado", "En Mantenimiento", "De Baja"];
+
+    if (productRequiredStates.includes(data.estadoActual) && !data.producto) {
+         ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Se requiere un producto para los totes en este estado.",
+            path: ["producto"],
+        });
     }
-    return true;
-}, {
-    message: "Si el estado es 'Con Cliente', la ubicación debe ser 'Cliente' y se debe seleccionar un cliente.",
-    path: ["clienteId"], // Asocia el error a un campo relevante.
+
+    if (productForbiddenStates.includes(data.estadoActual) && isProductFilled) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "La información de producto solo se aplica a totes 'En Uso' o 'Con Cliente'.",
+            path: ["producto"],
+        });
+    }
+
+    if (data.estadoActual === "Con Cliente") {
+        if (!data.clienteId) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Se debe seleccionar un cliente.",
+                path: ["clienteId"],
+            });
+        }
+        if (data.ubicacion !== "Cliente") {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "La ubicación debe ser 'Cliente'.",
+                path: ["ubicacion"],
+            });
+        }
+    } else {
+         if (data.clienteId) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Solo se puede asignar un cliente a un tote con estado 'Con Cliente'.",
+                path: ["clienteId"],
+            });
+        }
+        if (data.ubicacion === 'Cliente' && data.estadoActual !== 'Con Cliente'){
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "La ubicación 'Cliente' solo es válida si el estado es 'Con Cliente'.",
+                path: ['ubicacion']
+            })
+        }
+    }
 });
 
 export type ToteFormData = z.infer<typeof toteFormSchema>;
