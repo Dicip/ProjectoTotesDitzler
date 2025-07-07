@@ -148,6 +148,71 @@ export default function TotesPage() {
       });
     }
   }, [editingTote, isEditToteDialogOpen, form]);
+
+  const clientesMap = React.useMemo(() => 
+    clientes.reduce((acc, cliente) => {
+      acc[cliente.id] = cliente.nombreEmpresa;
+      return acc;
+    }, {} as Record<string, string>), 
+  [clientes]);
+
+  const usersMap = React.useMemo(() => 
+    users.reduce((acc, user) => {
+      acc[user.id] = user.name;
+      return acc;
+    }, {} as Record<string, string>), 
+  [users]);
+  
+  const filteredTotes = React.useMemo(() => {
+    return totes
+      .filter((tote) => {
+        const term = searchTerm.toLowerCase();
+        if (!term) return true;
+        const inCode = tote.codigoIdentificacion.toLowerCase().includes(term);
+        const inProduct = (tote.producto || "").toLowerCase().includes(term);
+        const inLote = (tote.lote || "").toLowerCase().includes(term);
+        return inCode || inProduct || inLote;
+      })
+      .filter((tote) => statusFilter === "all" || tote.estadoActual === statusFilter)
+      .filter((tote) => locationFilter === "all" || tote.ubicacion === locationFilter)
+      .filter((tote) => {
+        if (clientFilter === "all") return true;
+        if (clientFilter === "none") return !tote.clienteId;
+        return tote.clienteId === clientFilter;
+      })
+      .filter((tote) => {
+        if (operatorFilter === "all") return true;
+        if (operatorFilter === "none") return !tote.operadorId;
+        return tote.operadorId === operatorFilter;
+      })
+      .sort((a, b) => new Date(b.fechaAdquisicion).getTime() - new Date(a.fechaAdquisicion).getTime());
+  }, [totes, searchTerm, statusFilter, locationFilter, clientFilter, operatorFilter]);
+
+  const isProductInfoDisabled = React.useMemo(() => {
+    const productForbiddenStates: (typeof TOTE_ESTADOS)[number][] = ["Disponible", "En Lavado", "En Mantenimiento", "De Baja"];
+    return productForbiddenStates.includes(watchedStatus);
+  }, [watchedStatus]);
+
+  const isClientInfoDisabled = React.useMemo(() => {
+      return watchedStatus !== "Con Cliente";
+  }, [watchedStatus]);
+  
+  if (!isClient) {
+     return (
+      <div className="p-4 md:p-6 space-y-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <Skeleton className="h-8 w-1/2" /> <Skeleton className="h-10 w-48" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   
   const handleClearFilters = () => {
     setSearchTerm("");
@@ -278,73 +343,6 @@ export default function TotesPage() {
       }
     }
   };
-  
-  const clientesMap = React.useMemo(() => 
-    clientes.reduce((acc, cliente) => {
-      acc[cliente.id] = cliente.nombreEmpresa;
-      return acc;
-    }, {} as Record<string, string>), 
-  [clientes]);
-
-  const usersMap = React.useMemo(() => 
-    users.reduce((acc, user) => {
-      acc[user.id] = user.name;
-      return acc;
-    }, {} as Record<string, string>), 
-  [users]);
-  
-  const filteredTotes = React.useMemo(() => {
-    return totes
-      .filter((tote) => {
-        const term = searchTerm.toLowerCase();
-        if (!term) return true;
-        const inCode = tote.codigoIdentificacion.toLowerCase().includes(term);
-        const inProduct = (tote.producto || "").toLowerCase().includes(term);
-        const inLote = (tote.lote || "").toLowerCase().includes(term);
-        return inCode || inProduct || inLote;
-      })
-      .filter((tote) => statusFilter === "all" || tote.estadoActual === statusFilter)
-      .filter((tote) => locationFilter === "all" || tote.ubicacion === locationFilter)
-      .filter((tote) => {
-        if (clientFilter === "all") return true;
-        if (clientFilter === "none") return !tote.clienteId;
-        return tote.clienteId === clientFilter;
-      })
-      .filter((tote) => {
-        if (operatorFilter === "all") return true;
-        if (operatorFilter === "none") return !tote.operadorId;
-        return tote.operadorId === operatorFilter;
-      })
-      .sort((a, b) => new Date(b.fechaAdquisicion).getTime() - new Date(a.fechaAdquisicion).getTime());
-  }, [totes, searchTerm, statusFilter, locationFilter, clientFilter, operatorFilter]);
-
-
-  if (!isClient) {
-     return (
-      <div className="p-4 md:p-6 space-y-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <Skeleton className="h-8 w-1/2" /> <Skeleton className="h-10 w-48" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-  
-  const isProductInfoDisabled = React.useMemo(() => {
-    const productForbiddenStates: (typeof TOTE_ESTADOS)[number][] = ["Disponible", "En Lavado", "En Mantenimiento", "De Baja"];
-    return productForbiddenStates.includes(watchedStatus);
-  }, [watchedStatus]);
-
-  const isClientInfoDisabled = React.useMemo(() => {
-      return watchedStatus !== "Con Cliente";
-  }, [watchedStatus]);
-
 
   return (
     <div className="p-4 md:p-6 space-y-6">
@@ -587,3 +585,4 @@ export default function TotesPage() {
     </div>
   );
 }
+
