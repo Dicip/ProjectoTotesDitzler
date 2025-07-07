@@ -92,7 +92,7 @@ export default function LoginPage() {
     <div className="relative min-h-screen">
       <div className="absolute inset-0 z-[-1]">
         <Image 
-          src="/fondo.jpg"
+          src="/img/fondo.jpg"
           alt="Imagen de fondo de la aplicación"
           fill
           style={{ objectFit: 'cover' }}
