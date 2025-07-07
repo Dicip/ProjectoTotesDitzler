@@ -3,10 +3,9 @@
 
 import * as React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Edit, Trash2, MoreHorizontal, Info, CalendarIcon as CalendarLucideIcon, AlertTriangle, X, ScanLine, PlusCircle } from "lucide-react";
+import { Edit, Trash2, MoreHorizontal, Info, CalendarIcon as CalendarLucideIcon, AlertTriangle, X, ScanLine, PlusCircle, Package } from "lucide-react";
 import { format, parseISO, isBefore, startOfDay, differenceInDays } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -321,7 +320,7 @@ export default function TotesPage() {
         <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="space-y-1">
             <CardTitle className="flex items-center">
-              <Image src="/img/logo.jpg" alt="Ditzler Chile Logo" width={24} height={24} className="mr-2" data-ai-hint="logo icon" />
+              <Package className="mr-2 h-6 w-6" />
               Control de Totes
             </CardTitle>
             <p className="text-sm text-muted-foreground">
