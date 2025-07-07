@@ -100,10 +100,10 @@ export default function LoginPage() {
           priority
           data-ai-hint="background"
         />
-        <div className="absolute inset-0 bg-black/50" />
+        <div className="absolute inset-0 bg-black/50 dark:bg-black/70" />
       </div>
       <div className="flex min-h-screen items-center justify-center p-4">
-        <Card className="w-full max-w-md shadow-xl bg-card/90 backdrop-blur-sm">
+        <Card className="w-full max-w-md shadow-xl bg-card/90 dark:bg-card backdrop-blur-sm">
           <CardHeader className="space-y-1 text-center">
             <div className="flex justify-center mb-4">
               <Image
