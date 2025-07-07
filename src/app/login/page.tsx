@@ -92,13 +92,13 @@ export default function LoginPage() {
     <div className="relative min-h-screen">
       <div className="absolute inset-0 z-[-1]">
         <Image 
-          src="/img/berries-background.jpg"
-          alt="Fondo de frutos rojos variados"
+          src="/fondo.jpg"
+          alt="Imagen de fondo de la aplicación"
           fill
           style={{ objectFit: 'cover' }}
           quality={90}
           priority
-          data-ai-hint="berries background"
+          data-ai-hint="background"
         />
         <div className="absolute inset-0 bg-black/50" />
       </div>
