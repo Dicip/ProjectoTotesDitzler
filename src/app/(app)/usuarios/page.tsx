@@ -229,10 +229,14 @@ export default function UsuariosPage() {
   };
   
   const sortedUsers = React.useMemo(() => {
+    if (!Array.isArray(users)) {
+        return []; // Guard against non-array state
+    }
     return [...users]
-        .filter(u => u) // Filter out any null/undefined users
+        // This is a very defensive filter. It ensures every object is a valid User-like object before proceeding.
+        .filter(u => u && u.id && u.name && u.username && u.role && u.status && u.createdAt)
         .sort((a, b) => {
-            if (!a.createdAt || !b.createdAt) return 0;
+            // Because of the filter above, we can be confident a.createdAt and b.createdAt exist.
             return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
   }, [users]);
@@ -488,5 +492,3 @@ export default function UsuariosPage() {
     </div>
   );
 }
-
-    
