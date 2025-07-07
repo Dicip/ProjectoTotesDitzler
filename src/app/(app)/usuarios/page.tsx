@@ -175,7 +175,7 @@ export default function UsuariosPage() {
           throw new Error("Ya existe un usuario con este nombre de usuario.");
         }
         const newUser: User = {
-          id: `usr_${new Date().getTime()}`,
+          id: `usr_${data.username.toLowerCase()}`,
           name: data.name,
           username: data.username,
           email: data.email || undefined,

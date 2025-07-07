@@ -22,7 +22,7 @@ export async function addUser(userData: UserFormData): Promise<{ success: boolea
   }
 
   const newUser: User = {
-    id: `usr_${new Date().getTime()}`,
+    id: `usr_${userData.username.toLowerCase()}`,
     name: userData.name,
     username: userData.username,
     email: userData.email || undefined,
