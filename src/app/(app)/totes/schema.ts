@@ -39,7 +39,6 @@ export const toteFormSchema = z.object({
   unidadCapacidad: z.enum(["Litros", "Kg"], { required_error: "Debe seleccionar una unidad." }),
   estadoActual: z.enum(TOTE_ESTADOS, { required_error: "Debe seleccionar un estado." }),
   ubicacion: z.enum(TOTE_UBICACIONES, { required_error: "Debe seleccionar una ubicación." }),
-  fechaAdquisicion: z.coerce.date(), // Solo para visualización, no editable.
   
   // Nuevos campos en el formulario
   producto: z.string().optional().nullable(),

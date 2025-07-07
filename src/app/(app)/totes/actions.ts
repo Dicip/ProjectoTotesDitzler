@@ -10,6 +10,37 @@ export async function fetchTotes(): Promise<Tote[]> {
   return mockTotes;
 }
 
+export async function addTote(toteData: ToteFormData): Promise<{ success: boolean; error?: string; tote?: Tote }> {
+  console.log("[DEMO_MODE] Simulating addTote.", toteData);
+
+  // In a real scenario, you'd check for code uniqueness in the DB here.
+  // The client-side localStorage implementation will handle this.
+
+  const envasadoDate = toteData.fechaEnvasado ? new Date(toteData.fechaEnvasado) : null;
+  const vencimientoDate = toteData.fechaVencimiento ? new Date(toteData.fechaVencimiento) : null;
+
+  const newTote: Tote = {
+    id: `tote_${new Date().getTime()}`,
+    codigoIdentificacion: toteData.codigoIdentificacion,
+    tipoMaterial: toteData.tipoMaterial,
+    capacidad: toteData.capacidad,
+    unidadCapacidad: toteData.unidadCapacidad,
+    estadoActual: toteData.estadoActual,
+    ubicacion: toteData.ubicacion,
+    fechaAdquisicion: new Date().toISOString(), // Set acquisition date on creation
+    producto: toteData.producto || undefined,
+    clienteId: toteData.clienteId || null,
+    lote: toteData.lote || undefined,
+    fechaEnvasado: envasadoDate && !isNaN(envasadoDate.getTime()) ? envasadoDate.toISOString() : null,
+    fechaVencimiento: vencimientoDate && !isNaN(vencimientoDate.getTime()) ? vencimientoDate.toISOString() : null,
+    fechaDespacho: null, // Despacho date is set when status changes to "Con Cliente"
+    notas: toteData.notas || undefined,
+  };
+
+  return { success: true, tote: newTote };
+}
+
+
 export async function updateTote(toteId: string, toteData: ToteFormData): Promise<{ success: boolean; error?: string; tote?: Tote }> {
   console.log(`[DEMO_MODE] Simulating updateTote for toteId: ${toteId}`, toteData);
 

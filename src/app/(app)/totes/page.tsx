@@ -6,8 +6,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Edit, Trash2, MoreHorizontal, Info, CalendarIcon as CalendarLucideIcon, AlertTriangle, RefreshCw, AlertCircle, X } from "lucide-react";
-import { format, parseISO, isValid, isBefore, startOfDay, differenceInDays } from "date-fns";
+import { Edit, Trash2, MoreHorizontal, Info, CalendarIcon as CalendarLucideIcon, AlertTriangle, X, ScanLine, PlusCircle } from "lucide-react";
+import { format, parseISO, isBefore, startOfDay, differenceInDays } from "date-fns";
 import { es } from "date-fns/locale";
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -25,7 +25,6 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { useLocalStorage } from "@/hooks/use-local-storage";
@@ -65,6 +64,9 @@ export default function TotesPage() {
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [locationFilter, setLocationFilter] = React.useState("all");
   const [clientFilter, setClientFilter] = React.useState("all");
+  
+  const [isScanDialogOpen, setIsScanDialogOpen] = React.useState(false);
+  const [scanCode, setScanCode] = React.useState("");
 
   const { toast } = useToast();
 
@@ -74,13 +76,42 @@ export default function TotesPage() {
 
   const form = useForm<ToteFormData>({
     resolver: zodResolver(toteFormSchema),
+    defaultValues: {
+      codigoIdentificacion: "",
+      tipoMaterial: "Plástico HDPE",
+      capacidad: 1000,
+      unidadCapacidad: "Litros",
+      estadoActual: "Disponible",
+      ubicacion: "Patio de recepción",
+      producto: "",
+      clienteId: null,
+      lote: "",
+      fechaEnvasado: null,
+      fechaVencimiento: null,
+      notas: "",
+    },
   });
 
   React.useEffect(() => {
-    if (editingTote && isEditToteDialogOpen) {
+    if (!isEditToteDialogOpen) {
+      setEditingTote(null);
       form.reset({
+        codigoIdentificacion: "",
+        tipoMaterial: "Plástico HDPE",
+        capacidad: 1000,
+        unidadCapacidad: "Litros",
+        estadoActual: "Disponible",
+        ubicacion: "Patio de recepción",
+        producto: "",
+        clienteId: null,
+        lote: "",
+        fechaEnvasado: null,
+        fechaVencimiento: null,
+        notas: "",
+      });
+    } else if (editingTote) {
+       form.reset({
         ...editingTote,
-        fechaAdquisicion: parseISO(editingTote.fechaAdquisicion),
         fechaEnvasado: editingTote.fechaEnvasado ? format(parseISO(editingTote.fechaEnvasado), "yyyy-MM-dd") : null,
         fechaVencimiento: editingTote.fechaVencimiento ? format(parseISO(editingTote.fechaVencimiento), "yyyy-MM-dd") : null,
         notas: editingTote.notas || "",
@@ -88,17 +119,19 @@ export default function TotesPage() {
         lote: editingTote.lote || "",
         producto: editingTote.producto || "",
       });
-    } else if (!isEditToteDialogOpen) {
-      form.reset(); 
-      setEditingTote(null);
     }
-  }, [editingTote, form, isEditToteDialogOpen]);
+  }, [editingTote, isEditToteDialogOpen, form]);
   
   const handleClearFilters = () => {
     setSearchTerm("");
     setStatusFilter("all");
     setLocationFilter("all");
     setClientFilter("all");
+  };
+
+  const handleOpenAddToteDialog = () => {
+    setEditingTote(null);
+    setIsEditToteDialogOpen(true);
   };
 
   const handleOpenEditToteDialog = (tote: Tote) => {
@@ -111,44 +144,93 @@ export default function TotesPage() {
     setIsDeleteDialogOpen(true);
   };
 
-  const onSubmit = async (data: ToteFormData) => {
-    if (!editingTote) return; 
+  const handleScan = (code: string) => {
+    if (!code) {
+      toast({ variant: "destructive", title: "Error", description: "Por favor ingrese un código para escanear." });
+      return;
+    }
+    const found = totes.find(t => t.codigoIdentificacion.toLowerCase() === code.toLowerCase());
+    
+    setIsScanDialogOpen(false);
+    setScanCode("");
 
+    if (found) {
+      toast({ title: "Tote Encontrado", description: `Mostrando detalles para ${found.codigoIdentificacion}.` });
+      handleOpenEditToteDialog(found);
+    } else {
+      toast({ title: "Tote No Encontrado", description: "Puede registrar los detalles para el nuevo tote." });
+      form.reset({ // Pre-fill the form for a new tote
+        codigoIdentificacion: code,
+        tipoMaterial: "Plástico HDPE",
+        capacidad: 1000,
+        unidadCapacidad: 'Litros',
+        estadoActual: "Disponible",
+        ubicacion: "Patio de recepción",
+        producto: "",
+        clienteId: null,
+        lote: "",
+        fechaEnvasado: null,
+        fechaVencimiento: null,
+        notas: "",
+      });
+      setEditingTote(null); // Set to add mode
+      setIsEditToteDialogOpen(true);
+    }
+  };
+
+
+  const onSubmit = async (data: ToteFormData) => {
     try {
-        let fechaDespacho = editingTote.fechaDespacho;
-        if (data.estadoActual === 'Con Cliente' && editingTote.estadoActual !== 'Con Cliente') {
-            fechaDespacho = startOfDay(new Date()).toISOString();
-        } else if (data.estadoActual !== 'Con Cliente') {
-            fechaDespacho = null;
+        if (editingTote) { // Update logic
+            let fechaDespacho = editingTote.fechaDespacho;
+            if (data.estadoActual === 'Con Cliente' && editingTote.estadoActual !== 'Con Cliente') {
+                fechaDespacho = startOfDay(new Date()).toISOString();
+            } else if (data.estadoActual !== 'Con Cliente') {
+                fechaDespacho = null;
+            }
+
+            const envasadoDate = data.fechaEnvasado ? new Date(data.fechaEnvasado) : null;
+            const vencimientoDate = data.fechaVencimiento ? new Date(data.fechaVencimiento) : null;
+
+            const updatedTote: Tote = {
+                ...editingTote,
+                ...data,
+                fechaEnvasado: envasadoDate && !isNaN(envasadoDate.getTime()) ? envasadoDate.toISOString() : null,
+                fechaVencimiento: vencimientoDate && !isNaN(vencimientoDate.getTime()) ? vencimientoDate.toISOString() : null,
+                fechaDespacho: fechaDespacho,
+            };
+            
+            setTotes(totes.map((t) => (t.id === updatedTote.id ? updatedTote : t)));
+            toast({ title: "Tote actualizado", description: `El tote ${updatedTote.codigoIdentificacion} ha sido actualizado.` });
+        } else { // Add logic
+            const codeExists = totes.some(t => t.codigoIdentificacion.toLowerCase() === data.codigoIdentificacion.toLowerCase());
+            if (codeExists) {
+                throw new Error("Ya existe un tote con este código de identificación.");
+            }
+            const envasadoDate = data.fechaEnvasado ? new Date(data.fechaEnvasado) : null;
+            const vencimientoDate = data.fechaVencimiento ? new Date(data.fechaVencimiento) : null;
+
+            const newTote: Tote = {
+                id: `tote_${new Date().getTime()}`,
+                fechaAdquisicion: new Date().toISOString(),
+                ...data,
+                producto: data.producto || undefined,
+                clienteId: data.clienteId || null,
+                lote: data.lote || undefined,
+                fechaEnvasado: envasadoDate && !isNaN(envasadoDate.getTime()) ? envasadoDate.toISOString() : null,
+                fechaVencimiento: vencimientoDate && !isNaN(vencimientoDate.getTime()) ? vencimientoDate.toISOString() : null,
+                fechaDespacho: data.estadoActual === 'Con Cliente' ? startOfDay(new Date()).toISOString() : null,
+                notas: data.notas || undefined,
+            };
+            setTotes([newTote, ...totes]);
+            toast({ title: "Tote Registrado", description: `El tote ${newTote.codigoIdentificacion} ha sido agregado.` });
         }
 
-        const envasadoDate = data.fechaEnvasado ? new Date(data.fechaEnvasado) : null;
-        const vencimientoDate = data.fechaVencimiento ? new Date(data.fechaVencimiento) : null;
-
-        const updatedTote: Tote = {
-            ...editingTote,
-            codigoIdentificacion: data.codigoIdentificacion,
-            tipoMaterial: data.tipoMaterial,
-            capacidad: data.capacidad,
-            unidadCapacidad: data.unidadCapacidad,
-            estadoActual: data.estadoActual,
-            ubicacion: data.ubicacion,
-            notas: data.notas || undefined,
-            producto: data.producto || undefined,
-            clienteId: data.clienteId || null,
-            lote: data.lote || undefined,
-            fechaEnvasado: envasadoDate && !isNaN(envasadoDate.getTime()) ? envasadoDate.toISOString() : null,
-            fechaVencimiento: vencimientoDate && !isNaN(vencimientoDate.getTime()) ? vencimientoDate.toISOString() : null,
-            fechaDespacho: fechaDespacho,
-        };
-        
-        setTotes(totes.map((t) => (t.id === updatedTote.id ? updatedTote : t)));
-        toast({ title: "Tote actualizado", description: `El tote ${updatedTote.codigoIdentificacion} ha sido actualizado.` });
         setIsEditToteDialogOpen(false);
         setEditingTote(null);
 
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Error de Actualización", description: e.message });
+      toast({ variant: "destructive", title: "Error", description: e.message });
     }
   };
 
@@ -215,19 +297,25 @@ export default function TotesPage() {
   return (
     <div className="p-4 md:p-6 space-y-6">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="space-y-1">
             <CardTitle className="flex items-center">
               <Image src="/img/logo.jpg" alt="Ditzler Chile Logo" width={24} height={24} className="mr-2" data-ai-hint="logo icon" />
               Control de Totes
             </CardTitle>
             <p className="text-sm text-muted-foreground">
-              Visualice y edite los totes registrados en el sistema.
+              Visualice, edite y registre los totes en el sistema.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full md:w-auto items-center gap-2">
+            <Button variant="outline" onClick={() => setIsScanDialogOpen(true)} className="w-full">
+                <ScanLine className="mr-2 h-4 w-4" /> Escanear Tote
+            </Button>
+             <Button onClick={handleOpenAddToteDialog} className="w-full">
+              <PlusCircle className="mr-2 h-4 w-4" /> Registrar Tote
+            </Button>
             <Link href="/totes/informacion" legacyBehavior passHref>
-              <Button variant="outline">
+              <Button variant="outline" className="hidden lg:flex">
                 <Info className="mr-2 h-4 w-4" /> Ver Información General
               </Button>
             </Link>
@@ -296,7 +384,7 @@ export default function TotesPage() {
              {filteredTotes.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={10} className="h-24 text-center">
-                    {searchTerm ? "No se encontraron totes con ese código." : "No hay totes registrados."}
+                    No se encontraron totes con los filtros actuales.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -348,18 +436,42 @@ export default function TotesPage() {
           </div>
         </CardContent>
       </Card>
+      
+      <Dialog open={isScanDialogOpen} onOpenChange={setIsScanDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Escanear Tote</DialogTitle>
+            <DialogDescription>
+              Ingrese el código de identificación del tote para buscarlo o registrarlo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center space-x-2 py-4">
+            <Input
+              id="scanCode"
+              placeholder="Ej: TOTE-PL-001"
+              value={scanCode}
+              onChange={(e) => setScanCode(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleScan(scanCode)}
+            />
+            <Button type="submit" onClick={() => handleScan(scanCode)}>Buscar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isEditToteDialogOpen} onOpenChange={setIsEditToteDialogOpen}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Editar Tote</DialogTitle>
+            <DialogTitle>{editingTote ? "Editar Tote" : "Registrar Nuevo Tote"}</DialogTitle>
             <DialogDescription>
-              Modifique los detalles del tote. La fecha de despacho se actualiza automáticamente al cambiar el estado a "Con Cliente".
+             {editingTote 
+                ? "Modifique los detalles del tote. La fecha de despacho se actualiza automáticamente."
+                : "Complete los detalles para registrar un nuevo tote en el sistema."
+             }
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
-              <FormField control={form.control} name="codigoIdentificacion" render={({ field }) => ( <FormItem><FormLabel>Código</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="codigoIdentificacion" render={({ field }) => ( <FormItem><FormLabel>Código</FormLabel><FormControl><Input {...field} disabled={!!editingTote} /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="tipoMaterial" render={({ field }) => ( <FormItem><FormLabel>Material</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="Plástico HDPE">Plástico HDPE</SelectItem><SelectItem value="Acero Inoxidable">Acero Inoxidable</SelectItem><SelectItem value="Otro">Otro</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="capacidad" render={({ field }) => ( <FormItem><FormLabel>Capacidad</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="unidadCapacidad" render={({ field }) => ( <FormItem><FormLabel>Unidad</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="Litros">Litros</SelectItem><SelectItem value="Kg">Kg</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
@@ -393,20 +505,20 @@ export default function TotesPage() {
                   </FormItem>
                 )}
               />
-              <FormField control={form.control} name="producto" render={({ field }) => ( <FormItem><FormLabel>Producto</FormLabel><FormControl><Input {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="lote" render={({ field }) => ( <FormItem><FormLabel>Lote</FormLabel><FormControl><Input {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="producto" render={({ field }) => ( <FormItem><FormLabel>Producto</FormLabel><FormControl><Input {...field} value={field.value || ''} placeholder="Ej: Pulpa de Frutilla" /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="lote" render={({ field }) => ( <FormItem><FormLabel>Lote</FormLabel><FormControl><Input {...field} value={field.value || ''} placeholder="Ej: L-202405A" /></FormControl><FormMessage /></FormItem> )} />
               
               <FormField control={form.control} name="fechaEnvasado" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha de Envasado</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(parseISO(field.value), "PPP", { locale: es }) : <span>Seleccione fecha</span>}<CalendarLucideIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value ? parseISO(field.value) : undefined} onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="fechaVencimiento" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha de Vencimiento</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(parseISO(field.value), "PPP", { locale: es }) : <span>Seleccione fecha</span>}<CalendarLucideIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value ? parseISO(field.value) : undefined} onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem> )} />
               
-              <FormField control={form.control} name="notas" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Notas</FormLabel><FormControl><Textarea {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="notas" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Notas</FormLabel><FormControl><Textarea {...field} value={field.value || ''} placeholder="Anotaciones adicionales sobre el tote..."/></FormControl><FormMessage /></FormItem> )} />
               
               <DialogFooter className="md:col-span-2">
                  <DialogClose asChild>
                    <Button type="button" variant="outline">Cancelar</Button>
                 </DialogClose>
                 <Button type="submit" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? "Guardando..." : "Guardar Cambios"}
+                  {form.formState.isSubmitting ? "Guardando..." : (editingTote ? "Guardar Cambios" : "Registrar Tote")}
                 </Button>
               </DialogFooter>
             </form>
