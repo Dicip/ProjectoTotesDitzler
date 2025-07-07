@@ -58,6 +58,7 @@ export async function updateUser(userId: string, userData: UserFormData): Promis
 
   const updatedUser: User = {
     ...originalUser,
+    id: `usr_${userData.username.toLowerCase()}`, // Recalculate ID
     name: userData.name,
     username: userData.username,
     email: userData.email || undefined,

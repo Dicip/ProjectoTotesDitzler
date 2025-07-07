@@ -67,9 +67,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { useLocalStorage } from "@/hooks/use-local-storage";
-import { mockUsers } from "@/data/mock-data";
+import { mockUsers, mockTotes } from "@/data/mock-data";
 import type { User, UserFormData } from "./schema"; 
 import { userFormSchema } from "./schema"; 
+import type { Tote } from "../totes/schema";
 
 
 const roleTranslations: Record<User["role"], string> = {
@@ -86,6 +87,7 @@ const statusTranslations: Record<User["status"], string> = {
 export default function UsuariosPage() {
   const [isClient, setIsClient] = React.useState(false);
   const [users, setUsers] = useLocalStorage<User[]>("dicipware_users", mockUsers);
+  const [totes, setTotes] = useLocalStorage<Tote[]>("dicipware_totes", mockTotes);
   const [isAddOrEditUserDialogOpen, setIsAddOrEditUserDialogOpen] = React.useState(false);
   const [editingUser, setEditingUser] = React.useState<User | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
@@ -156,8 +158,11 @@ export default function UsuariosPage() {
             throw new Error("Ya existe otro usuario con este nombre de usuario.");
           }
         }
+        
+        const oldId = editingUser.id;
         const updatedUser: User = { 
-          ...editingUser, 
+          ...editingUser,
+          id: `usr_${data.username.toLowerCase()}`, // Recalculate ID from new username
           name: data.name,
           username: data.username,
           email: data.email || undefined,
@@ -165,7 +170,19 @@ export default function UsuariosPage() {
           status: data.status,
           password: data.password ? data.password : editingUser.password, 
         };
-        setUsers(users.map((u) => (u.id === editingUser.id ? updatedUser : u)));
+        const newId = updatedUser.id;
+
+        setUsers(users.map((u) => (u.id === oldId ? updatedUser : u)));
+        
+        // If the user ID changed, we need to update any totes assigned to them
+        if (oldId !== newId) {
+            setTotes(currentTotes => 
+                currentTotes.map(tote => 
+                    tote.operadorId === oldId ? { ...tote, operadorId: newId } : tote
+                )
+            );
+        }
+
         toast({ title: "Usuario actualizado", description: `El usuario ${data.name} ha sido actualizado.` });
 
       } else {
