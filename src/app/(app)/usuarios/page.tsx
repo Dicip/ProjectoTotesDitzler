@@ -103,6 +103,8 @@ export default function UsuariosPage() {
       email: "",
       role: "Viewer",
       status: "Active",
+      password: "",
+      confirmPassword: "",
     },
   });
 
@@ -113,9 +115,11 @@ export default function UsuariosPage() {
         email: editingUser.email,
         role: editingUser.role,
         status: editingUser.status,
+        password: "",
+        confirmPassword: "",
       });
     } else {
-      form.reset({ name: "", email: "", role: "Viewer", status: "Active" });
+      form.reset({ name: "", email: "", role: "Viewer", status: "Active", password: "", confirmPassword: "" });
     }
   }, [editingUser, form, isAddOrEditUserDialogOpen]);
 
@@ -136,6 +140,11 @@ export default function UsuariosPage() {
   };
 
   const onSubmit = async (data: UserFormData) => {
+    if (!editingUser && (!data.password || data.password.length < 6)) {
+      form.setError("password", { type: "manual", message: "La contraseña es obligatoria y debe tener al menos 6 caracteres." });
+      return;
+    }
+
     try {
       if (editingUser) {
         // Update existing user
@@ -145,7 +154,14 @@ export default function UsuariosPage() {
             throw new Error("Ya existe otro usuario con este email.");
           }
         }
-        const updatedUser: User = { ...editingUser, ...data };
+        const updatedUser: User = { 
+          ...editingUser, 
+          name: data.name,
+          email: data.email,
+          role: data.role,
+          status: data.status,
+          password: data.password ? data.password : editingUser.password, 
+        };
         setUsers(users.map((u) => (u.id === editingUser.id ? updatedUser : u)));
         toast({ title: "Usuario actualizado", description: `El usuario ${data.name} ha sido actualizado.` });
 
@@ -157,7 +173,11 @@ export default function UsuariosPage() {
         }
         const newUser: User = {
           id: `usr_${new Date().getTime()}`,
-          ...data,
+          name: data.name,
+          email: data.email,
+          role: data.role,
+          status: data.status,
+          password: data.password,
           avatar: `https://placehold.co/40x40.png?text=${data.name.substring(0,1)}`,
           createdAt: new Date().toISOString(),
           registeredBy: 'Admin Panel',
@@ -293,11 +313,11 @@ export default function UsuariosPage() {
       </Card>
 
       <Dialog open={isAddOrEditUserDialogOpen} onOpenChange={setIsAddOrEditUserDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{editingUser ? "Editar Usuario" : "Agregar Nuevo Usuario"}</DialogTitle>
             <DialogDescription>
-              {editingUser ? "Modifique los detalles del usuario." : "Complete los detalles para crear un nuevo usuario."}
+              {editingUser ? "Modifique los detalles del usuario. Deje la contraseña en blanco para no cambiarla." : "Complete los detalles para crear un nuevo usuario."}
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
@@ -328,6 +348,32 @@ export default function UsuariosPage() {
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Contraseña</FormLabel>
+                    <FormControl>
+                        <Input type="password" placeholder={editingUser ? "Dejar en blanco para no cambiar" : "Mínimo 6 caracteres"} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Confirmar Contraseña</FormLabel>
+                    <FormControl>
+                        <Input type="password" placeholder="Repita la contraseña" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
               <FormField
                 control={form.control}
                 name="role"

@@ -65,8 +65,7 @@ export async function loginUser(credentials: LoginFormValues): Promise<LoginResu
     console.log("[DEMO_MODE] Attempting mock user login.");
     const mockUser = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
     
-    // For demo, any password works if the user exists and is active.
-    if (mockUser && mockUser.status === 'Active') {
+    if (mockUser && mockUser.password === password && mockUser.status === 'Active') {
         sessionData = {
             userId: mockUser.id,
             email: mockUser.email,
