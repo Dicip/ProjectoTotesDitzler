@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { LogIn, AlertCircle, Sun, Moon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -37,10 +36,29 @@ const loginClientSchema = z.object({
 type LoginFormValues = z.infer<typeof loginClientSchema>;
 
 export default function LoginPage() {
-  const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const { toggleTheme } = useTheme();
+
+  React.useEffect(() => {
+    // This is a safeguard to ensure mock data exists for the login page to function
+    // if the user's local storage has been cleared.
+    try {
+        const users = window.localStorage.getItem("dicipware_users");
+        if (!users || JSON.parse(users).length === 0) {
+            window.localStorage.setItem("dicipware_users", JSON.stringify(mockUsers));
+        }
+        const logs = window.localStorage.getItem("dicipware_logs");
+        if (!logs) {
+            window.localStorage.setItem("dicipware_logs", JSON.stringify(mockLogs));
+        }
+    } catch (e) {
+        // If parsing fails, reset the data
+        console.warn("Failed to parse localStorage data, resetting.", e);
+        window.localStorage.setItem("dicipware_users", JSON.stringify(mockUsers));
+        window.localStorage.setItem("dicipware_logs", JSON.stringify(mockLogs));
+    }
+  }, []);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginClientSchema),

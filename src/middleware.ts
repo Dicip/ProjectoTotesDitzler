@@ -1,34 +1,23 @@
-
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { AUTH_COOKIE_NAME } from '@/lib/constants';
-import type { UserSessionData } from './app/login/actions';
 
 // =================================================================
-// PUNTO DE CONTROL DE SESIÓN 3: VALIDACIÓN DE LA SESIÓN
-// Este archivo (`middleware.ts`) es el guardián de tus rutas.
-// Se ejecuta ANTES de cada solicitud a una página.
-// Su trabajo es leer la cookie de autenticación (`dicipware-auth-token`),
-// verificar si es válida y decidir si el usuario tiene permiso
-// para ver la página solicitada. Si no, lo redirige al login.
+// PUNTO DE CONTROL DE SESIÓN: VALIDACIÓN DE LA SESIÓN (SIMPLIFICADO)
+// Este middleware es el guardián de tus rutas. Se ejecuta ANTES de cada solicitud.
+// Su trabajo es leer la cookie de autenticación y redirigir al usuario según su estado.
 // =================================================================
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionCookie = request.cookies.get(AUTH_COOKIE_NAME);
   const isAuthenticated = !!sessionCookie;
 
-  // Si el usuario no está autenticado y visita la página raíz,
-  // le mostramos el contenido de la página de login sin cambiar la URL.
-  if (!isAuthenticated && pathname === '/') {
-    return NextResponse.rewrite(new URL('/login', request.url));
-  }
-
-  // --- Lógica de redirección estándar ---
-  const publicPaths = ['/login', '/register'];
+  // Rutas públicas que no requieren autenticación
+  const publicPaths = ['/login'];
   const isPublicPath = publicPaths.some(path => pathname.startsWith(path));
 
-  // CASO 1: Usuario autenticado intenta acceder a una página pública.
-  // Lo redirigimos a la página principal del panel (que es '/').
+  // CASO 1: Usuario autenticado intenta acceder a una página pública (ej: /login).
+  // Lo redirigimos a la página principal del panel ('/').
   if (isAuthenticated && isPublicPath) {
     return NextResponse.redirect(new URL('/', request.url));
   }
@@ -36,12 +25,11 @@ export function middleware(request: NextRequest) {
   // CASO 2: Usuario NO autenticado intenta acceder a una página protegida.
   // Lo redirigimos al login.
   if (!isAuthenticated && !isPublicPath) {
-    // La reescritura de arriba ya manejó el caso de la raíz.
-    // Esto se encarga de otras rutas como /totes, /usuarios, etc.
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // CASO 3: En cualquier otro caso, permitimos que la solicitud continúe.
+  // CASO 3: En cualquier otro caso (usuario autenticado en ruta protegida,
+  // o usuario no autenticado en ruta pública), permitimos que la solicitud continúe.
   return NextResponse.next();
 }
 
