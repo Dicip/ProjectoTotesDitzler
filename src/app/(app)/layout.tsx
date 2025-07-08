@@ -5,7 +5,7 @@ import * as React from "react";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
-import { mockUsers, mockClientes, mockTotes } from "@/data/mock-data";
+import { mockUsers, mockClientes, mockTotes, mockLogs } from "@/data/mock-data";
 
 
 // This is a one-time setup effect to ensure the demo data exists in localStorage.
@@ -17,6 +17,7 @@ const initializeDemoData = () => {
       dicipware_users: mockUsers,
       dicipware_clientes: mockClientes,
       dicipware_totes: mockTotes,
+      dicipware_logs: mockLogs,
     };
 
     for (const [key, mockData] of Object.entries(dataKeys)) {

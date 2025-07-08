@@ -4,7 +4,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Package, Users, Briefcase, Settings, Moon, Sun, LogOut, UserCircle } from "lucide-react";
+import { LayoutDashboard, Package, Users, Briefcase, Settings, Moon, Sun, LogOut, UserCircle, History } from "lucide-react";
 import {
   Sidebar,
   SidebarHeader,
@@ -40,6 +40,7 @@ export function AppSidebar() {
     { href: "/totes", label: "Totes", icon: Package },
     { href: "/usuarios", label: "Usuarios", icon: Users },
     { href: "/clientes", label: "Clientes", icon: Briefcase },
+    { href: "/registro-cambios", label: "Registro de Cambios", icon: History },
   ];
 
   const handleLogout = () => {
