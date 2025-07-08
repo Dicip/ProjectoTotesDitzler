@@ -66,9 +66,10 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { useLocalStorage } from "@/hooks/use-local-storage";
-import { mockUsers } from "@/data/mock-data";
+import { mockUsers, mockTotes } from "@/data/mock-data";
 import type { User, UserFormData } from "./schema"; 
-import { userFormSchema } from "./schema"; 
+import { userFormSchema } from "./schema";
+import type { Tote } from "@/app/(app)/totes/schema";
 
 
 const roleTranslations: Record<User["role"], string> = {
@@ -85,6 +86,7 @@ const statusTranslations: Record<User["status"], string> = {
 export default function UsuariosPage() {
   const [isClient, setIsClient] = React.useState(false);
   const [users, setUsers] = useLocalStorage<User[]>("dicipware_users", mockUsers);
+  const [totes, setTotes] = useLocalStorage<Tote[]>("dicipware_totes", mockTotes);
   const [isAddOrEditUserDialogOpen, setIsAddOrEditUserDialogOpen] = React.useState(false);
   const [editingUser, setEditingUser] = React.useState<User | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
@@ -148,15 +150,20 @@ export default function UsuariosPage() {
 
     try {
       if (editingUser) {
-        // Update existing user
-        if (data.username.toLowerCase() !== editingUser.username.toLowerCase()) {
-          const existingUser = users.find(u => u.username.toLowerCase() === data.username.toLowerCase() && u.id !== editingUser.id);
-          if (existingUser) {
-            throw new Error("Ya existe otro usuario con este nombre de usuario.");
-          }
+        // Validation for uniqueness
+        if (users.some(u => u.username.toLowerCase() === data.username.toLowerCase() && u.id !== editingUser.id)) {
+          throw new Error("Ya existe otro usuario con este nombre de usuario.");
         }
+        if (data.email && users.some(u => u.email?.toLowerCase() === data.email?.toLowerCase() && u.id !== editingUser.id)) {
+          throw new Error("Ya existe otro usuario con este correo electrónico.");
+        }
+
+        const oldId = editingUser.id;
+        const newId = `usr_${data.username.toLowerCase()}`;
+
         const updatedUser: User = { 
-          ...editingUser, 
+          ...editingUser,
+          id: newId,
           name: data.name,
           username: data.username,
           email: data.email || undefined,
@@ -164,15 +171,30 @@ export default function UsuariosPage() {
           status: data.status,
           password: data.password ? data.password : editingUser.password, 
         };
-        setUsers(users.map((u) => (u.id === editingUser.id ? updatedUser : u)));
+
+        setUsers(users.map((u) => (u.id === oldId ? updatedUser : u)));
+        
+        // If ID changed, cascade the update to Totes' operatorId
+        if (oldId !== newId) {
+            setTotes(currentTotes => currentTotes.map(tote => {
+                if (tote.operadorId === oldId) {
+                    return { ...tote, operadorId: newId };
+                }
+                return tote;
+            }));
+        }
+
         toast({ title: "Usuario actualizado", description: `El usuario ${data.name} ha sido actualizado.` });
 
       } else {
         // Add new user
-        const existingUser = users.find(u => u.username.toLowerCase() === data.username.toLowerCase());
-        if (existingUser) {
+        if (users.some(u => u.username.toLowerCase() === data.username.toLowerCase())) {
           throw new Error("Ya existe un usuario con este nombre de usuario.");
         }
+        if (data.email && users.some(u => u.email?.toLowerCase() === data.email?.toLowerCase())) {
+          throw new Error("Ya existe un usuario con este correo electrónico.");
+        }
+        
         const newUser: User = {
           id: `usr_${data.username.toLowerCase()}`,
           name: data.name,
@@ -180,7 +202,7 @@ export default function UsuariosPage() {
           email: data.email || undefined,
           role: data.role,
           status: data.status,
-          password: data.password,
+          password: data.password!,
           avatar: `https://placehold.co/40x40.png?text=${data.name.substring(0,1)}`,
           createdAt: new Date().toISOString(),
           registeredBy: 'Admin Panel',
@@ -211,7 +233,10 @@ export default function UsuariosPage() {
   };
   
   const sortedUsers = React.useMemo(() => {
-    return [...users].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    // Filter out any potentially invalid user objects before sorting
+    return [...users]
+        .filter(user => user && typeof user === 'object' && user.createdAt)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [users]);
 
 
@@ -286,7 +311,7 @@ export default function UsuariosPage() {
                         {statusTranslations[user.status]}
                       </Badge>
                     </TableCell>
-                    <TableCell>{format(parseISO(user.createdAt), 'P', { locale: es })}</TableCell>
+                    <TableCell>{user.createdAt ? format(parseISO(user.createdAt), 'P', { locale: es }) : '-'}</TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

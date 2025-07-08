@@ -5,9 +5,8 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation"; // Aunque la redirección principal es desde el server action
+import { useRouter } from "next/navigation";
 import { LogIn, AlertCircle, Sun, Moon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -20,10 +19,15 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { loginUser } from "./actions";
 import { useTheme } from "@/components/theme-provider";
+
+import type { UserSessionData } from "./actions";
+import type { User } from "@/app/(app)/usuarios/schema";
+import { AUTH_COOKIE_NAME } from "@/lib/constants";
+import { mockUsers } from "@/data/mock-data";
+
 
 const loginClientSchema = z.object({
   username: z.string().min(1, { message: "El nombre de usuario o email es obligatorio." }),
@@ -46,41 +50,52 @@ export default function LoginPage() {
     },
   });
 
-  const onSubmit = async (data: LoginFormValues) => {
+  const onSubmit = (data: LoginFormValues) => {
     setIsLoading(true);
     setError(null);
-    console.log("[LoginPage] Submitting login form with data:", data);
     try {
-      // La Server Action 'loginUser' maneja la redirección con redirect() en caso de éxito.
-      // Si hay un error, lo devolverá y se mostrará aquí.
-      const result = await loginUser(data);
+      // For this demo, we read directly from localStorage to get the most up-to-date user list.
+      // In a real app, this would be an API call.
+      const usersJSON = window.localStorage.getItem("dicipware_users");
+      const users: User[] = usersJSON ? JSON.parse(usersJSON) : mockUsers;
 
-      if (result && !result.success && result.error) {
-        console.log("[LoginPage] Login failed with error from action:", result.error);
-        setError(result.error);
-        setIsLoading(false); // Detener el spinner en caso de error explícito
+      const loginIdentifier = data.username.toLowerCase();
+      
+      const user = users.find(
+        u => u.username.toLowerCase() === loginIdentifier || (u.email && u.email.toLowerCase() === loginIdentifier)
+      );
+
+      if (!user) {
+        throw new Error("Usuario o email no encontrado.");
       }
-      // Si la acción redirige, este código no se alcanzará o no tendrá efecto.
-      // Si la acción *no* redirige Y *no* devuelve un error (improbable para login),
-      // entonces setIsLoading(false) podría ser necesario, pero la redirección es prioritaria.
+      if (user.status !== 'Active') {
+        throw new Error(`La cuenta del usuario '${user.username}' está inactiva.`);
+      }
+      if (user.password !== data.password) {
+        throw new Error("Contraseña incorrecta.");
+      }
+
+      // If validation passes, create session data and set cookie
+      const sessionData: UserSessionData = {
+        userId: user.id,
+        username: user.username,
+        email: user.email,
+        nombre: user.name,
+        rol: user.role,
+      };
+      const sessionValue = JSON.stringify(sessionData);
+      
+      const maxAge = 60 * 60 * 24 * 7; // 1 week
+      document.cookie = `${AUTH_COOKIE_NAME}=${encodeURIComponent(sessionValue)}; path=/; max-age=${maxAge}; SameSite=Lax`;
+      
+      // Redirect to dashboard
+      router.push('/');
 
     } catch (err: any) {
-      // Este catch block maneja errores si la Server Action misma lanza una excepción NO manejada
-      // o si es un error especial de Next.js como 'NEXT_REDIRECT'.
-      if (err.message && err.message.includes('NEXT_REDIRECT')) {
-        // Esto es un "error" esperado cuando ocurre una redirección desde la server action.
-        // Next.js lo maneja internamente para efectuar la redirección. No es un error real para el usuario.
-        console.log("[LoginPage] Server-side redirect occurred. Client-side navigation/state update skipped.");
-        // No es necesario llamar a setIsLoading(false) aquí, ya que la página se recargará/navegará.
-        return;
-      } else {
-        console.error("[LoginPage] Login submission error (exception caught):", err);
-        setError(err.message || "Ocurrió un error inesperado. Intente nuevamente.");
-        setIsLoading(false); // Detener el spinner en caso de excepción
-      }
+      console.error("[LoginPage] Login submission error:", err);
+      setError(err.message || "Ocurrió un error inesperado. Intente nuevamente.");
+      setIsLoading(false);
     }
-    // setIsLoading(false) aquí podría ser redundante si hay redirección o un error manejado arriba.
-    // Si la acción no redirige y no da error, se podría necesitar aquí.
   };
 
   return (

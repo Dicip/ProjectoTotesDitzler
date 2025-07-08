@@ -3,8 +3,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation"; // Added useRouter
-import { LayoutDashboard, Package, Users, Briefcase, Settings, Moon, Sun, LogOut, UserCircle } from "lucide-react"; // Added LogOut
+import { usePathname, useRouter } from "next/navigation";
+import { LayoutDashboard, Package, Users, Briefcase, Settings, Moon, Sun, LogOut, UserCircle } from "lucide-react";
 import {
   Sidebar,
   SidebarHeader,
@@ -19,14 +19,14 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator, // Added DropdownMenuItem
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useTheme } from "@/components/theme-provider";
-import { logoutUser } from '@/app/login/actions'; // Path to login actions
 import { useToast } from "@/hooks/use-toast";
+import { AUTH_COOKIE_NAME } from "@/lib/constants";
 
 
 export function AppSidebar() {
@@ -42,11 +42,13 @@ export function AppSidebar() {
     { href: "/clientes", label: "Clientes", icon: Briefcase },
   ];
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     try {
-      await logoutUser();
+      // Delete cookie client-side by setting its expiration date to the past
+      document.cookie = `${AUTH_COOKIE_NAME}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
       toast({ title: "Sesión cerrada", description: "Ha cerrado sesión exitosamente." });
-      router.push('/login'); // Redirect to login page
+      // Use router.replace to prevent going back to the authenticated page
+      router.replace('/login');
     } catch (error) {
       toast({ variant: "destructive", title: "Error", description: "No se pudo cerrar la sesión." });
     }
