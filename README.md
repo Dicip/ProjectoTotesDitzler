@@ -52,3 +52,5 @@ Esta aplicación está configurada para funcionar exclusivamente en modo de demo
 -   Genkit (para IA)
 
 DicipWare todos los derechos reservados
+
+Prueba
