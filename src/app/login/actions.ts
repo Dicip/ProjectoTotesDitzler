@@ -43,51 +43,67 @@ export async function loginUser(credentials: LoginFormValues): Promise<LoginResu
 
   const { username, password } = validation.data;
 
-  let sessionData: UserSessionData | null = null;
-
-  // --- Hardcoded Admin Check (always available) ---
-  if (username.toLowerCase() === 'adm' && password === '123') {
-    sessionData = {
-        userId: 'adm_user',
-        username: 'adm',
-        email: 'adm@dicipware.com',
-        nombre: 'Administrador del Sistema',
-        rol: 'Admin',
-    };
-    console.log(`[DEMO_MODE] 'adm' user authenticated successfully.`);
-  } else {
-    // --- DEMO MODE USER CHECK ---
-    console.log("[DEMO_MODE] Attempting mock user login.");
-    const mockUser = mockUsers.find(u => u.username.toLowerCase() === username.toLowerCase());
-    
-    if (mockUser && mockUser.password === password && mockUser.status === 'Active') {
-        sessionData = {
-            userId: mockUser.id,
-            username: mockUser.username,
-            email: mockUser.email,
-            nombre: mockUser.name,
-            rol: mockUser.role,
-        };
-        console.log(`[DEMO_MODE] Mock user ${mockUser.username} authenticated successfully.`);
+  // --- Hardcoded Admin Check (siempre disponible) ---
+  if (username.toLowerCase() === 'adm') {
+    if (password === '123') {
+      const sessionData: UserSessionData = {
+          userId: 'adm_user',
+          username: 'adm',
+          email: 'adm@dicipware.com',
+          nombre: 'Administrador del Sistema',
+          rol: 'Admin',
+      };
+      
+      const sessionValue = JSON.stringify(sessionData);
+      cookies().set(AUTH_COOKIE_NAME, sessionValue, {
+          httpOnly: true,
+          path: '/',
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 24 * 7, // 1 semana
+          secure: process.env.NODE_ENV === 'production',
+      });
+      redirect('/');
+    } else {
+      return { success: false, error: "Contraseña incorrecta para el usuario 'adm'." };
     }
   }
 
-  if (sessionData) {
-    const sessionValue = JSON.stringify(sessionData);
-    console.log(`[LoginAction] Setting auth cookie for '${sessionData.username}' with value: ${sessionValue}`);
-    cookies().set(AUTH_COOKIE_NAME, sessionValue, {
-        httpOnly: true,
-        path: '/',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7, // 1 week
-        secure: process.env.NODE_ENV === 'production',
-    });
-    redirect('/');
+  // --- Verificación de usuario en modo de demostración ---
+  const mockUser = mockUsers.find(u => u.username.toLowerCase() === username.toLowerCase());
+
+  if (!mockUser) {
+    return { success: false, error: "Nombre de usuario no encontrado." };
   }
 
-  // This part is only reached if authentication fails at all stages
-  return { success: false, error: "Credenciales inválidas." };
+  if (mockUser.status !== 'Active') {
+    return { success: false, error: `La cuenta del usuario '${username}' está inactiva.` };
+  }
+
+  if (mockUser.password !== password) {
+    return { success: false, error: "Contraseña incorrecta." };
+  }
+
+  // Si todas las comprobaciones pasan, el inicio de sesión es exitoso
+  const sessionData: UserSessionData = {
+      userId: mockUser.id,
+      username: mockUser.username,
+      email: mockUser.email,
+      nombre: mockUser.name,
+      rol: mockUser.role,
+  };
+
+  const sessionValue = JSON.stringify(sessionData);
+  cookies().set(AUTH_COOKIE_NAME, sessionValue, {
+      httpOnly: true,
+      path: '/',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 1 semana
+      secure: process.env.NODE_ENV === 'production',
+  });
+  
+  redirect('/');
 }
+
 
 // =================================================================
 // PUNTO DE CONTROL DE SESIÓN 2: DESTRUCCIÓN DE LA SESIÓN
