@@ -154,7 +154,7 @@ export default function UsuariosPage() {
         if (users.some(u => u.username.toLowerCase() === data.username.toLowerCase() && u.id !== editingUser.id)) {
           throw new Error("Ya existe otro usuario con este nombre de usuario.");
         }
-        if (data.email && users.some(u => u.email?.toLowerCase() === data.email?.toLowerCase() && u.id !== editingUser.id)) {
+        if (data.email && users.some(u => typeof u.email === 'string' && u.email.toLowerCase() === data.email.toLowerCase() && u.id !== editingUser.id)) {
           throw new Error("Ya existe otro usuario con este correo electrónico.");
         }
 
@@ -191,7 +191,7 @@ export default function UsuariosPage() {
         if (users.some(u => u.username.toLowerCase() === data.username.toLowerCase())) {
           throw new Error("Ya existe un usuario con este nombre de usuario.");
         }
-        if (data.email && users.some(u => u.email?.toLowerCase() === data.email?.toLowerCase())) {
+        if (data.email && users.some(u => typeof u.email === 'string' && u.email.toLowerCase() === data.email.toLowerCase())) {
           throw new Error("Ya existe un usuario con este correo electrónico.");
         }
         
