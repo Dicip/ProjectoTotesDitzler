@@ -51,4 +51,4 @@ Esta aplicación está configurada para funcionar exclusivamente en modo de demo
 -   ShadCN UI
 -   Genkit (para IA)
 
-DicipWare 
+DicipWare todos los derechos reservados
