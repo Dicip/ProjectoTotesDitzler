@@ -8,8 +8,7 @@ import type { KpiData, PieDataPoint, ToteCompanyHolder, OverdueToteInfo } from "
 import type { ChartConfig } from "@/components/ui/chart";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Package, AlertTriangle, Users } from "lucide-react";
+import { Package, AlertTriangle, Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { differenceInDays, isBefore, parseISO, startOfDay } from "date-fns";
 

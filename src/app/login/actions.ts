@@ -17,7 +17,7 @@ export interface UserSessionData {
 }
 
 const loginFormSchema = z.object({
-  username: z.string().min(1, { message: "El nombre de usuario es obligatorio." }),
+  username: z.string().min(1, { message: "El nombre de usuario o email es obligatorio." }),
   password: z.string().min(1, { message: "La contraseña es obligatoria." }),
 });
 
@@ -28,12 +28,6 @@ interface LoginResult {
   error?: string;
 }
 
-// =================================================================
-// PUNTO DE CONTROL DE SESIÓN 1: CREACIÓN DE LA SESIÓN
-// Esta función, `loginUser`, es donde se INICIA la sesión.
-// Después de validar las credenciales, convierte los datos del usuario a JSON
-// y usa `cookies().set()` para crear la cookie de autenticación que el navegador guardará.
-// =================================================================
 export async function loginUser(credentials: LoginFormValues): Promise<LoginResult> {
   const validation = loginFormSchema.safeParse(credentials);
   if (!validation.success) {
@@ -42,54 +36,31 @@ export async function loginUser(credentials: LoginFormValues): Promise<LoginResu
   }
 
   const { username, password } = validation.data;
+  const loginIdentifier = username.toLowerCase();
 
-  // --- Hardcoded Admin Check (siempre disponible) ---
-  if (username.toLowerCase() === 'adm') {
-    if (password === '123') {
-      const sessionData: UserSessionData = {
-          userId: 'adm_user',
-          username: 'adm',
-          email: 'adm@dicipware.com',
-          nombre: 'Administrador del Sistema',
-          rol: 'Admin',
-      };
-      
-      const sessionValue = JSON.stringify(sessionData);
-      cookies().set(AUTH_COOKIE_NAME, sessionValue, {
-          httpOnly: true,
-          path: '/',
-          sameSite: 'lax',
-          maxAge: 60 * 60 * 24 * 7, // 1 semana
-          secure: process.env.NODE_ENV === 'production',
-      });
-      redirect('/');
-    } else {
-      return { success: false, error: "Contraseña incorrecta para el usuario 'adm'." };
-    }
+  const user = mockUsers.find(
+    u => u.username.toLowerCase() === loginIdentifier || (u.email && u.email.toLowerCase() === loginIdentifier)
+  );
+
+  if (!user) {
+    return { success: false, error: "Usuario o email no encontrado." };
   }
 
-  // --- Verificación de usuario en modo de demostración ---
-  const mockUser = mockUsers.find(u => u.username.toLowerCase() === username.toLowerCase());
-
-  if (!mockUser) {
-    return { success: false, error: "Nombre de usuario no encontrado." };
+  if (user.status !== 'Active') {
+    return { success: false, error: `La cuenta del usuario '${user.username}' está inactiva.` };
   }
 
-  if (mockUser.status !== 'Active') {
-    return { success: false, error: `La cuenta del usuario '${username}' está inactiva.` };
-  }
-
-  if (mockUser.password !== password) {
+  if (user.password !== password) {
     return { success: false, error: "Contraseña incorrecta." };
   }
 
   // Si todas las comprobaciones pasan, el inicio de sesión es exitoso
   const sessionData: UserSessionData = {
-      userId: mockUser.id,
-      username: mockUser.username,
-      email: mockUser.email,
-      nombre: mockUser.name,
-      rol: mockUser.role,
+      userId: user.id,
+      username: user.username,
+      email: user.email,
+      nombre: user.name,
+      rol: user.role,
   };
 
   const sessionValue = JSON.stringify(sessionData);
@@ -105,11 +76,6 @@ export async function loginUser(credentials: LoginFormValues): Promise<LoginResu
 }
 
 
-// =================================================================
-// PUNTO DE CONTROL DE SESIÓN 2: DESTRUCCIÓN DE LA SESIÓN
-// Esta función, `logoutUser`, es donde se CIERRA la sesión.
-// Simplemente elimina la cookie de autenticación del navegador.
-// =================================================================
 export async function logoutUser() {
   const cookieStore = cookies();
   const sessionCookie = cookieStore.get(AUTH_COOKIE_NAME);

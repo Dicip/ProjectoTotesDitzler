@@ -5,11 +5,6 @@
  * ya que los datos se obtendrán (o simularán) desde un servicio de backend.
  */
 
-export interface TimeSeriesDataPoint {
-  date: string; // Formato ISO, ej: "2023-01-01"
-  value: number;
-}
-
 export interface PieDataPoint {
   name: string;
   value: number;
@@ -37,7 +32,3 @@ export interface KpiData {
 // Los datos de ejemplo (mockKpiData) y la función filterTimeSeriesData han sido removidos
 // ya que la lógica de obtención y filtrado de datos ahora reside en la página
 // que consume el servicio sqlserver-service.ts (o directamente en el servicio).
-
-    
-
-    

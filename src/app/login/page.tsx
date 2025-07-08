@@ -26,7 +26,7 @@ import { loginUser } from "./actions";
 import { useTheme } from "@/components/theme-provider";
 
 const loginClientSchema = z.object({
-  username: z.string().min(1, { message: "El nombre de usuario es obligatorio." }),
+  username: z.string().min(1, { message: "El nombre de usuario o email es obligatorio." }),
   password: z.string().min(1, { message: "La contraseña es obligatoria." }),
 });
 
@@ -143,9 +143,9 @@ export default function LoginPage() {
                   name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nombre de Usuario</FormLabel>
+                      <FormLabel>Usuario o Email</FormLabel>
                       <FormControl>
-                        <Input type="text" placeholder="ej: amartinez, adm" {...field} />
+                        <Input type="text" placeholder="ej: amartinez o adm" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

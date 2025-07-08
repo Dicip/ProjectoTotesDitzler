@@ -11,6 +11,7 @@ import { subDays, format, isBefore, parseISO, startOfDay, addDays, differenceInD
 // =================================================================
 
 export const mockUsers: User[] = [
+  { id: 'usr_adm', username: 'adm', name: 'Administrador del Sistema', email: 'admin@dicipware.com', password: '123', role: 'Admin', status: 'Active', avatar: 'https://placehold.co/40x40.png?text=AD', createdAt: subDays(new Date(), 1).toISOString(), registeredBy: 'System' },
   { id: 'usr_amartinez', username: 'amartinez', name: 'Ana Martínez', email: 'ana.martinez@example.com', password: '123', role: 'Admin', status: 'Active', avatar: 'https://placehold.co/40x40.png?text=AM', createdAt: subDays(new Date(), 2).toISOString(), registeredBy: 'Admin Panel' },
   { id: 'usr_cgomez', username: 'cgomez', name: 'Carlos Gómez', email: 'carlos.gomez@example.com', password: '123', role: 'Editor', status: 'Active', avatar: 'https://placehold.co/40x40.png?text=CG', createdAt: subDays(new Date(), 10).toISOString(), registeredBy: 'Admin Panel' },
   { id: 'usr_lfernandez', username: 'lfernandez', name: 'Lucía Fernández', email: '', password: '123', role: 'Viewer', status: 'Inactive', avatar: 'https://placehold.co/40x40.png?text=LF', createdAt: subDays(new Date(), 25).toISOString(), registeredBy: 'API' },
