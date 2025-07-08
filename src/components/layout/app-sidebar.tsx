@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { LayoutDashboard, Package, Users, Briefcase, Settings, Moon, Sun, LogOut, UserCircle, History } from "lucide-react";
 import {
   Sidebar,
@@ -26,12 +26,11 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useTheme } from "@/components/theme-provider";
 import { useToast } from "@/hooks/use-toast";
-import { AUTH_COOKIE_NAME } from "@/lib/constants";
+import { logout } from "@/app/login/actions";
 
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const router = useRouter();
   const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
 
@@ -43,17 +42,18 @@ export function AppSidebar() {
     { href: "/registro-cambios", label: "Registro de Cambios", icon: History },
   ];
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     try {
-      // Delete cookie client-side by setting its expiration date to the past
-      document.cookie = `${AUTH_COOKIE_NAME}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax;`;
+      await logout();
+      
       toast({ title: "Sesión cerrada", description: "Ha cerrado sesión exitosamente." });
       
-      // Force a full page reload to ensure the middleware re-evaluates the authentication state.
-      // This is more reliable than router.replace() in this context.
+      // Force a full page reload to ensure the middleware re-evaluates the authentication state
+      // and clears any client-side state.
       window.location.href = '/login';
 
     } catch (error) {
+      console.error("Logout failed:", error);
       toast({ variant: "destructive", title: "Error", description: "No se pudo cerrar la sesión." });
     }
   };
