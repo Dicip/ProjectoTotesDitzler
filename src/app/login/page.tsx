@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -60,9 +59,12 @@ export default function LoginPage() {
 
       const loginIdentifier = data.username.toLowerCase();
       
-      const user = users.find(
-        u => u.username.toLowerCase() === loginIdentifier || (u.email && u.email.toLowerCase() === loginIdentifier)
-      );
+      const user = users.find(u => {
+        if (!u) return false;
+        const usernameMatch = u.username && u.username.toLowerCase() === loginIdentifier;
+        const emailMatch = u.email && u.email.toLowerCase() === loginIdentifier;
+        return usernameMatch || emailMatch;
+      });
 
       if (!user) {
         throw new Error("Usuario o email no encontrado.");
