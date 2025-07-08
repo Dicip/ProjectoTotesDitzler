@@ -65,9 +65,12 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { useLocalStorage } from "@/hooks/use-local-storage";
-import { mockClientes } from "@/data/mock-data";
+import { mockClientes, mockLogs } from "@/data/mock-data";
 import type { Cliente, ClienteFormData } from "./schema";
 import { clienteFormSchema } from "./schema";
+import type { LogEntry } from "../registro-cambios/schema";
+import type { UserSessionData } from "@/app/login/actions";
+import { AUTH_COOKIE_NAME } from "@/lib/constants";
 
 
 const tipoClienteTranslations: Record<Cliente["tipo"], string> = {
@@ -84,6 +87,8 @@ const estadoClienteTranslations: Record<Cliente["estado"], string> = {
 export default function ClientesPage() {
   const [isClient, setIsClient] = React.useState(false);
   const [clientes, setClientes] = useLocalStorage<Cliente[]>("dicipware_clientes", mockClientes);
+  const [logs, setLogs] = useLocalStorage<LogEntry[]>("dicipware_logs", mockLogs);
+  const [sessionUser, setSessionUser] = React.useState<UserSessionData | null>(null);
   const [isAddOrEditClienteDialogOpen, setIsAddOrEditClienteDialogOpen] = React.useState(false);
   const [editingCliente, setEditingCliente] = React.useState<Cliente | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
@@ -92,6 +97,21 @@ export default function ClientesPage() {
 
   React.useEffect(() => {
     setIsClient(true);
+    // Get session user from cookie
+    const cookieValue = document.cookie
+        .split('; ')
+        .find(row => row.startsWith(`${AUTH_COOKIE_NAME}=`))
+        ?.split('=')[1];
+
+    if (cookieValue) {
+        try {
+            const decodedCookie = decodeURIComponent(cookieValue);
+            setSessionUser(JSON.parse(decodedCookie));
+        } catch (e) {
+            console.error("Failed to parse session cookie", e);
+            setSessionUser(null);
+        }
+    }
   }, []);
 
   const form = useForm<ClienteFormData>({
@@ -133,12 +153,21 @@ export default function ClientesPage() {
   const onSubmit = async (data: ClienteFormData) => {
     try {
       if (editingCliente) {
-        // Update existing client
         const updatedCliente: Cliente = { ...editingCliente, ...data };
         setClientes(clientes.map((c) => (c.id === editingCliente.id ? updatedCliente : c)));
+        
+        const logEntry: LogEntry = {
+          id: `log_${new Date().getTime()}`,
+          fecha: new Date().toISOString(),
+          usuario: sessionUser?.nombre || "Sistema",
+          accion: 'Edición',
+          entidad: 'Cliente',
+          descripcion: `Se actualizó la información del cliente: ${data.nombreEmpresa}.`,
+        };
+        setLogs(prevLogs => [logEntry, ...prevLogs]);
+
         toast({ title: "Cliente actualizado", description: `El cliente ${data.nombreEmpresa} ha sido actualizado.` });
       } else {
-        // Add new client
         const existingCliente = clientes.find(c => c.nombreEmpresa.toLowerCase() === data.nombreEmpresa.toLowerCase());
         if (existingCliente) {
           throw new Error("Ya existe un cliente con este nombre de empresa.");
@@ -150,6 +179,17 @@ export default function ClientesPage() {
           fechaCreacion: new Date().toISOString(),
         };
         setClientes([newCliente, ...clientes]);
+        
+        const logEntry: LogEntry = {
+          id: `log_${new Date().getTime()}`,
+          fecha: new Date().toISOString(),
+          usuario: sessionUser?.nombre || "Sistema",
+          accion: 'Creación',
+          entidad: 'Cliente',
+          descripcion: `Se creó el nuevo cliente: ${data.nombreEmpresa}.`,
+        };
+        setLogs(prevLogs => [logEntry, ...prevLogs]);
+
         toast({ title: "Cliente agregado", description: `El cliente ${data.nombreEmpresa} ha sido agregado.` });
       }
       setIsAddOrEditClienteDialogOpen(false);
@@ -164,6 +204,17 @@ export default function ClientesPage() {
       const clienteToDelete = clientes.find(c => c.id === deletingClienteId);
       try {
         setClientes(clientes.filter((c) => c.id !== deletingClienteId));
+
+        const logEntry: LogEntry = {
+          id: `log_${new Date().getTime()}`,
+          fecha: new Date().toISOString(),
+          usuario: sessionUser?.nombre || "Sistema",
+          accion: 'Eliminación',
+          entidad: 'Cliente',
+          descripcion: `Se eliminó al cliente "${clienteToDelete?.nombreEmpresa || ''}".`,
+        };
+        setLogs(prevLogs => [logEntry, ...prevLogs]);
+
         toast({ title: "Cliente eliminado", description: `El cliente ${clienteToDelete?.nombreEmpresa || ''} ha sido eliminado.`, variant: "destructive" });
       } catch (e: any) {
          toast({ variant: "destructive", title: "Error", description: "No se pudo eliminar el cliente." });

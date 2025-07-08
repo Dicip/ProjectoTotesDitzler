@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -65,10 +66,13 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { useLocalStorage } from "@/hooks/use-local-storage";
-import { mockUsers, mockTotes } from "@/data/mock-data";
+import { mockUsers, mockTotes, mockLogs } from "@/data/mock-data";
 import type { User, UserFormData } from "./schema"; 
 import { userFormSchema } from "./schema";
 import type { Tote } from "@/app/(app)/totes/schema";
+import type { LogEntry } from "../registro-cambios/schema";
+import type { UserSessionData } from "@/app/login/actions";
+import { AUTH_COOKIE_NAME } from "@/lib/constants";
 
 
 const roleTranslations: Record<User["role"], string> = {
@@ -86,6 +90,8 @@ export default function UsuariosPage() {
   const [isClient, setIsClient] = React.useState(false);
   const [users, setUsers] = useLocalStorage<User[]>("dicipware_users", mockUsers);
   const [totes, setTotes] = useLocalStorage<Tote[]>("dicipware_totes", mockTotes);
+  const [logs, setLogs] = useLocalStorage<LogEntry[]>("dicipware_logs", mockLogs);
+  const [sessionUser, setSessionUser] = React.useState<UserSessionData | null>(null);
   const [isAddOrEditUserDialogOpen, setIsAddOrEditUserDialogOpen] = React.useState(false);
   const [editingUser, setEditingUser] = React.useState<User | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
@@ -94,6 +100,21 @@ export default function UsuariosPage() {
 
   React.useEffect(() => {
     setIsClient(true);
+    // Get session user from cookie
+    const cookieValue = document.cookie
+        .split('; ')
+        .find(row => row.startsWith(`${AUTH_COOKIE_NAME}=`))
+        ?.split('=')[1];
+
+    if (cookieValue) {
+        try {
+            const decodedCookie = decodeURIComponent(cookieValue);
+            setSessionUser(JSON.parse(decodedCookie));
+        } catch (e) {
+            console.error("Failed to parse session cookie", e);
+            setSessionUser(null);
+        }
+    }
   }, []);
 
   const form = useForm<UserFormData>({ 
@@ -176,7 +197,6 @@ export default function UsuariosPage() {
 
         setUsers(users.map((u) => (u.id === oldId ? updatedUser : u)));
         
-        // If ID changed, cascade the update to Totes' operatorId
         if (oldId !== newId) {
             setTotes(currentTotes => currentTotes.map(tote => {
                 if (tote.operadorId === oldId) {
@@ -186,10 +206,19 @@ export default function UsuariosPage() {
             }));
         }
 
+        const logEntry: LogEntry = {
+          id: `log_${new Date().getTime()}`,
+          fecha: new Date().toISOString(),
+          usuario: sessionUser?.nombre || "Sistema",
+          accion: 'Edición',
+          entidad: 'Usuario',
+          descripcion: `Se actualizó la información del usuario: ${data.name}.`,
+        };
+        setLogs(prevLogs => [logEntry, ...prevLogs]);
+
         toast({ title: "Usuario actualizado", description: `El usuario ${data.name} ha sido actualizado.` });
 
       } else {
-        // Add new user (safer validation)
         if (users.some(u => u && u.username && u.username.toLowerCase() === data.username.toLowerCase())) {
           throw new Error("Ya existe un usuario con este nombre de usuario.");
         }
@@ -213,6 +242,17 @@ export default function UsuariosPage() {
           registeredBy: 'Admin Panel',
         };
         setUsers([newUser, ...users]);
+        
+        const logEntry: LogEntry = {
+          id: `log_${new Date().getTime()}`,
+          fecha: new Date().toISOString(),
+          usuario: sessionUser?.nombre || "Sistema",
+          accion: 'Creación',
+          entidad: 'Usuario',
+          descripcion: `Se creó el nuevo usuario: ${data.name}.`,
+        };
+        setLogs(prevLogs => [logEntry, ...prevLogs]);
+
         toast({ title: "Usuario agregado", description: `El usuario ${data.name} ha sido agregado.` });
       }
       setIsAddOrEditUserDialogOpen(false);
@@ -227,6 +267,17 @@ export default function UsuariosPage() {
       const userToDelete = users.find(u => u.id === deletingUserId);
       try {
         setUsers(users.filter((u) => u.id !== deletingUserId));
+
+        const logEntry: LogEntry = {
+          id: `log_${new Date().getTime()}`,
+          fecha: new Date().toISOString(),
+          usuario: sessionUser?.nombre || "Sistema",
+          accion: 'Eliminación',
+          entidad: 'Usuario',
+          descripcion: `Se eliminó al usuario "${userToDelete?.name || ''}".`,
+        };
+        setLogs(prevLogs => [logEntry, ...prevLogs]);
+
         toast({ title: "Usuario eliminado", description: `El usuario ${userToDelete?.name || ''} ha sido eliminado.` });
       } catch (e: any) {
          toast({ variant: "destructive", title: "Error", description: "No se pudo eliminar el usuario." });
@@ -238,7 +289,6 @@ export default function UsuariosPage() {
   };
   
   const sortedUsers = React.useMemo(() => {
-    // Robustly filter out any invalid user objects before sorting
     return [...users]
         .filter(user => 
             user && 

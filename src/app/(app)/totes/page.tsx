@@ -27,12 +27,15 @@ import { Calendar } from "@/components/ui/calendar";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { useLocalStorage } from "@/hooks/use-local-storage";
-import { mockTotes, mockClientes, mockUsers } from "@/data/mock-data";
+import { mockTotes, mockClientes, mockUsers, mockLogs } from "@/data/mock-data";
 
 import type { Cliente } from "../clientes/schema";
 import type { User } from "../usuarios/schema";
 import type { Tote, ToteFormData } from "./schema"; 
 import { toteFormSchema, TOTE_ESTADOS, TOTE_UBICACIONES } from "./schema"; 
+import type { LogEntry } from "../registro-cambios/schema";
+import type { UserSessionData } from "@/app/login/actions";
+import { AUTH_COOKIE_NAME } from "@/lib/constants";
 
 
 const isToteOverdue = (tote: Tote): boolean => {
@@ -56,6 +59,8 @@ export default function TotesPage() {
   const [totes, setTotes] = useLocalStorage<Tote[]>("dicipware_totes", mockTotes);
   const [clientes] = useLocalStorage<Cliente[]>("dicipware_clientes", mockClientes);
   const [users] = useLocalStorage<User[]>("dicipware_users", mockUsers);
+  const [logs, setLogs] = useLocalStorage<LogEntry[]>("dicipware_logs", mockLogs);
+  const [sessionUser, setSessionUser] = React.useState<UserSessionData | null>(null);
   const [isEditToteDialogOpen, setIsEditToteDialogOpen] = React.useState(false);
   const [editingTote, setEditingTote] = React.useState<Tote | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
@@ -74,6 +79,21 @@ export default function TotesPage() {
 
   React.useEffect(() => {
     setIsClient(true);
+    // Get session user from cookie
+    const cookieValue = document.cookie
+        .split('; ')
+        .find(row => row.startsWith(`${AUTH_COOKIE_NAME}=`))
+        ?.split('=')[1];
+
+    if (cookieValue) {
+        try {
+            const decodedCookie = decodeURIComponent(cookieValue);
+            setSessionUser(JSON.parse(decodedCookie));
+        } catch (e) {
+            console.error("Failed to parse session cookie", e);
+            setSessionUser(null);
+        }
+    }
   }, []);
 
   const form = useForm<ToteFormData>({
@@ -295,6 +315,17 @@ export default function TotesPage() {
             };
             
             setTotes(totes.map((t) => (t.id === updatedTote.id ? updatedTote : t)));
+            
+            const logEntry: LogEntry = {
+              id: `log_${new Date().getTime()}`,
+              fecha: new Date().toISOString(),
+              usuario: sessionUser?.nombre || "Sistema",
+              accion: 'Edición',
+              entidad: 'Tote',
+              descripcion: `Se actualizó el tote: ${updatedTote.codigoIdentificacion}.`,
+            };
+            setLogs(prevLogs => [logEntry, ...prevLogs]);
+
             toast({ title: "Tote actualizado", description: `El tote ${updatedTote.codigoIdentificacion} ha sido actualizado.` });
         } else { 
             const codeExists = totes.some(t => t.codigoIdentificacion.toLowerCase() === data.codigoIdentificacion.toLowerCase());
@@ -318,6 +349,17 @@ export default function TotesPage() {
                 notas: data.notas || undefined,
             };
             setTotes([newTote, ...totes]);
+
+            const logEntry: LogEntry = {
+              id: `log_${new Date().getTime()}`,
+              fecha: new Date().toISOString(),
+              usuario: sessionUser?.nombre || "Sistema",
+              accion: 'Creación',
+              entidad: 'Tote',
+              descripcion: `Se registró el nuevo tote: ${newTote.codigoIdentificacion}.`,
+            };
+            setLogs(prevLogs => [logEntry, ...prevLogs]);
+
             toast({ title: "Tote Registrado", description: `El tote ${newTote.codigoIdentificacion} ha sido agregado.` });
         }
 
@@ -334,6 +376,17 @@ export default function TotesPage() {
       const toteToDelete = totes.find(t => t.id === deletingToteId);
       try {
         setTotes(totes.filter((t) => t.id !== deletingToteId));
+        
+        const logEntry: LogEntry = {
+          id: `log_${new Date().getTime()}`,
+          fecha: new Date().toISOString(),
+          usuario: sessionUser?.nombre || "Sistema",
+          accion: 'Eliminación',
+          entidad: 'Tote',
+          descripcion: `Se eliminó el tote: ${toteToDelete?.codigoIdentificacion || ''}.`,
+        };
+        setLogs(prevLogs => [logEntry, ...prevLogs]);
+        
         toast({ title: "Tote eliminado", description: `El tote ${toteToDelete?.codigoIdentificacion || ''} ha sido eliminado.`});
       } catch (e: any) {
         toast({ variant: "destructive", title: "Error de Eliminación", description: "No se pudo eliminar el tote." });
@@ -585,4 +638,3 @@ export default function TotesPage() {
     </div>
   );
 }
-

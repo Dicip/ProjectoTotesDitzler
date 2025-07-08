@@ -25,8 +25,9 @@ import { useTheme } from "@/components/theme-provider";
 
 import type { UserSessionData } from "./actions";
 import type { User } from "@/app/(app)/usuarios/schema";
+import type { LogEntry } from "@/app/(app)/registro-cambios/schema";
 import { AUTH_COOKIE_NAME } from "@/lib/constants";
-import { mockUsers } from "@/data/mock-data";
+import { mockUsers, mockLogs } from "@/data/mock-data";
 
 
 const loginClientSchema = z.object({
@@ -54,8 +55,6 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null);
     try {
-      // For this demo, we read directly from localStorage to get the most up-to-date user list.
-      // In a real app, this would be an API call.
       const usersJSON = window.localStorage.getItem("dicipware_users");
       const users: User[] = usersJSON ? JSON.parse(usersJSON) : mockUsers;
 
@@ -75,7 +74,24 @@ export default function LoginPage() {
         throw new Error("Contraseña incorrecta.");
       }
 
-      // If validation passes, create session data and set cookie
+      // Create log entry for successful login
+      try {
+        const logsJSON = window.localStorage.getItem("dicipware_logs");
+        const currentLogs: LogEntry[] = logsJSON ? JSON.parse(logsJSON) : mockLogs;
+        const newLogEntry: LogEntry = {
+          id: `log_${new Date().getTime()}`,
+          fecha: new Date().toISOString(),
+          usuario: user.name,
+          accion: 'Login',
+          entidad: 'Autenticación',
+          descripcion: 'Inicio de sesión exitoso.',
+        };
+        const updatedLogs = [newLogEntry, ...currentLogs];
+        window.localStorage.setItem("dicipware_logs", JSON.stringify(updatedLogs));
+      } catch (logError) {
+        console.error("Failed to write login event to log:", logError);
+      }
+      
       const sessionData: UserSessionData = {
         userId: user.id,
         username: user.username,
@@ -88,7 +104,6 @@ export default function LoginPage() {
       const maxAge = 60 * 60 * 24 * 7; // 1 week
       document.cookie = `${AUTH_COOKIE_NAME}=${encodeURIComponent(sessionValue)}; path=/; max-age=${maxAge}; SameSite=Lax`;
       
-      // Redirect to dashboard
       router.push('/');
 
     } catch (err: any) {
