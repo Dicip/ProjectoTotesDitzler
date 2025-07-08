@@ -60,8 +60,8 @@ export default function LoginPage() {
       const loginIdentifier = data.username.toLowerCase();
       
       const user = users.find(u => {
-        if (!u) return false;
-        const usernameMatch = u.username && u.username.toLowerCase() === loginIdentifier;
+        if (!u || !u.username) return false;
+        const usernameMatch = u.username.toLowerCase() === loginIdentifier;
         const emailMatch = u.email && u.email.toLowerCase() === loginIdentifier;
         return usernameMatch || emailMatch;
       });
@@ -106,7 +106,9 @@ export default function LoginPage() {
       const maxAge = 60 * 60 * 24 * 7; // 1 week
       document.cookie = `${AUTH_COOKIE_NAME}=${encodeURIComponent(sessionValue)}; path=/; max-age=${maxAge}; SameSite=Lax`;
       
-      router.push('/');
+      // Use full page navigation to ensure the cookie is sent to the server
+      // and the middleware can properly authenticate the new session.
+      window.location.assign('/');
 
     } catch (err: any) {
       console.error("[LoginPage] Login submission error:", err);
