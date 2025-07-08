@@ -101,7 +101,7 @@ export default function LoginPage() {
 
       <div className="absolute inset-0 z-[-1]">
         <Image 
-          src="/img/fondo.jpg"
+          src="/img/fondo2.jpg"
           alt="Imagen de fondo de la aplicación"
           fill
           style={{ objectFit: 'cover' }}
