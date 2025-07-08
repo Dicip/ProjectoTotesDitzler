@@ -46,10 +46,13 @@ export function AppSidebar() {
   const handleLogout = () => {
     try {
       // Delete cookie client-side by setting its expiration date to the past
-      document.cookie = `${AUTH_COOKIE_NAME}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
+      document.cookie = `${AUTH_COOKIE_NAME}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax;`;
       toast({ title: "Sesión cerrada", description: "Ha cerrado sesión exitosamente." });
-      // Use router.replace to prevent going back to the authenticated page
-      router.replace('/login');
+      
+      // Force a full page reload to ensure the middleware re-evaluates the authentication state.
+      // This is more reliable than router.replace() in this context.
+      window.location.href = '/login';
+
     } catch (error) {
       toast({ variant: "destructive", title: "Error", description: "No se pudo cerrar la sesión." });
     }
