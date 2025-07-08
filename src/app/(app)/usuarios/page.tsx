@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -97,6 +96,19 @@ export default function UsuariosPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [deletingUserId, setDeletingUserId] = React.useState<string | null>(null);
   const { toast } = useToast();
+
+  const getAvatarColorClass = (role: User["role"]) => {
+    switch (role) {
+      case "Admin":
+        return "bg-primary text-primary-foreground";
+      case "Editor":
+        return "bg-yellow-500 text-black";
+      case "Viewer":
+        return "bg-destructive text-destructive-foreground";
+      default:
+        return "bg-muted";
+    }
+  };
 
   React.useEffect(() => {
     setIsClient(true);
@@ -363,7 +375,9 @@ export default function UsuariosPage() {
                     <TableCell>
                       <Avatar>
                         <AvatarImage src={user.avatar || `https://placehold.co/40x40.png?text=${user.name.substring(0,1)}`} alt={user.name} data-ai-hint="user initial" />
-                        <AvatarFallback>{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                        <AvatarFallback className={getAvatarColorClass(user.role)}>
+                          {user.name.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
                       </Avatar>
                     </TableCell>
                     <TableCell className="font-medium">{user.name}</TableCell>
