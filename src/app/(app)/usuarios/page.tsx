@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -150,12 +149,15 @@ export default function UsuariosPage() {
 
     try {
       if (editingUser) {
-        // Validation for uniqueness
-        if (users.some(u => u.username.toLowerCase() === data.username.toLowerCase() && u.id !== editingUser.id)) {
+        // Validation for uniqueness (safer version)
+        if (users.some(u => u && u.username && u.username.toLowerCase() === data.username.toLowerCase() && u.id !== editingUser.id)) {
           throw new Error("Ya existe otro usuario con este nombre de usuario.");
         }
-        if (data.email && users.some(u => typeof u.email === 'string' && u.email.toLowerCase() === data.email.toLowerCase() && u.id !== editingUser.id)) {
-          throw new Error("Ya existe otro usuario con este correo electrónico.");
+        if (data.email) {
+          const emailToFind = data.email.toLowerCase();
+          if (users.some(u => u && u.email && u.email.toLowerCase() === emailToFind && u.id !== editingUser.id)) {
+             throw new Error("Ya existe otro usuario con este correo electrónico.");
+          }
         }
 
         const oldId = editingUser.id;
@@ -187,12 +189,15 @@ export default function UsuariosPage() {
         toast({ title: "Usuario actualizado", description: `El usuario ${data.name} ha sido actualizado.` });
 
       } else {
-        // Add new user
-        if (users.some(u => u.username.toLowerCase() === data.username.toLowerCase())) {
+        // Add new user (safer validation)
+        if (users.some(u => u && u.username && u.username.toLowerCase() === data.username.toLowerCase())) {
           throw new Error("Ya existe un usuario con este nombre de usuario.");
         }
-        if (data.email && users.some(u => typeof u.email === 'string' && u.email.toLowerCase() === data.email.toLowerCase())) {
-          throw new Error("Ya existe un usuario con este correo electrónico.");
+        if (data.email) {
+          const emailToFind = data.email.toLowerCase();
+          if (users.some(u => u && u.email && u.email.toLowerCase() === emailToFind)) {
+             throw new Error("Ya existe un usuario con este correo electrónico.");
+          }
         }
         
         const newUser: User = {
@@ -233,9 +238,18 @@ export default function UsuariosPage() {
   };
   
   const sortedUsers = React.useMemo(() => {
-    // Filter out any potentially invalid user objects before sorting
+    // Robustly filter out any invalid user objects before sorting
     return [...users]
-        .filter(user => user && typeof user === 'object' && user.createdAt)
+        .filter(user => 
+            user && 
+            typeof user === 'object' && 
+            user.id && 
+            user.name && 
+            user.username &&
+            user.role &&
+            user.status &&
+            user.createdAt
+        )
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [users]);
 
@@ -287,7 +301,7 @@ export default function UsuariosPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.length === 0 ? (
+              {sortedUsers.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="h-24 text-center">
                     No hay usuarios para mostrar.
