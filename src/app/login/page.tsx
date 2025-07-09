@@ -168,7 +168,7 @@ export default function LoginPage() {
           <CardHeader className="space-y-1 text-center">
             <div className="flex justify-center mb-4">
               <Image
-                src="/img/logo.jpg"
+                src="/img/logo2.png"
                 alt="Ditzler Chile Logo"
                 width={180}
                 height={45}
