@@ -172,6 +172,7 @@ export default function LoginPage() {
                 alt="Ditzler Chile Logo"
                 width={180}
                 height={45}
+                style={{ height: 'auto' }}
                 data-ai-hint="logo"
               />
             </div>
