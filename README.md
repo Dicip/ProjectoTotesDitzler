@@ -12,11 +12,11 @@ Este proyecto es una **demostración funcional** y una prueba de concepto (PoC) 
 ### Funcionalidades en Modo Demostración:
 
 *   **Datos Persistentes Locales:** Todos los cambios que realices (crear, editar, eliminar) se guardarán en tu navegador. Si limpias los datos de tu navegador, la aplicación se restaurará al estado inicial.
-*   **Usuarios de Ejemplo:** Puedes iniciar sesión con cualquiera de los siguientes usuarios (la contraseña es `123` para todos):
-    *   `admin@dicipware.com` (Rol: Administrador)
-    *   `ana.martinez@example.com` (Rol: Administrador)
-    *   `carlos.gomez@example.com` (Rol: Editor)
-    *   `jorge.diaz@example.com` (Rol: Visualizador)
+
+*   **Usuario de Ejemplo:** 
+
+USER : admin
+PASSWORD : 123
 
 ---
 
