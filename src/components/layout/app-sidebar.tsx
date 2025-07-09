@@ -62,11 +62,11 @@ export function AppSidebar() {
     <Sidebar variant="inset" collapsible="icon">
       <SidebarHeader>
         <Button variant="ghost" size="icon" className="h-10 w-10 mx-auto mb-2 hidden group-data-[collapsible=icon]:flex">
-          <Image src="/img/logo.jpg" alt="Ditzler Chile Logo" width={32} height={32} data-ai-hint="logo icon" />
+          <Image src="/img/logo2.png" alt="Ditzler Chile Logo" width={32} height={32} data-ai-hint="logo icon" />
           <span className="sr-only">Ditzler Chile</span>
         </Button>
         <div className="flex items-center justify-center group-data-[collapsible=icon]:hidden px-2 py-2">
-           <Image src="/img/logo.jpg" alt="Ditzler Chile Logo" width={180} height={45} data-ai-hint="logo" />
+           <Image src="/img/logo2.png" alt="Ditzler Chile Logo" width={180} height={45} data-ai-hint="logo" />
         </div>
       </SidebarHeader>
       <SidebarContent>
