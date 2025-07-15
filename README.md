@@ -1,4 +1,4 @@
-
+git checkout 5bb394a
 # Firebase Studio
 
 Este es un proyecto de demostración de NextJS en Firebase Studio.
